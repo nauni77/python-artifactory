@@ -177,7 +177,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
         artifact_path_url = urllib.parse.quote(artifact_path)
         # Filter out keep-alive new chunks with a filter function
         return filter(
-            lambda chunk: chunk, self._get(f"{artifact_path_url}", stream=True).iter_content(chunk_size=chunk_size),
+            lambda chunk: chunk,
+            self._get(f"{artifact_path_url}", stream=True).iter_content(chunk_size=chunk_size),
         )
 
     def download(self, artifact_path: str, local_directory_path: str = ".") -> Path:
