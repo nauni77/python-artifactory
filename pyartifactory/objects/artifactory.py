@@ -12,6 +12,7 @@ from pyartifactory.objects.permission import ArtifactoryPermission
 from pyartifactory.objects.repository import ArtifactoryRepository
 from pyartifactory.objects.security import ArtifactorySecurity
 from pyartifactory.objects.user import ArtifactoryUser
+from pyartifactory.objects.system import ArtifactorySystem
 
 
 class Artifactory:
@@ -43,3 +44,4 @@ class Artifactory:
         self.artifacts = ArtifactoryArtifact(self.artifactory)
         self.permissions = ArtifactoryPermission(self.artifactory)
         self.builds = ArtifactoryBuild(self.artifactory)
+        self.system = ArtifactorySystem(self.artifactory)
