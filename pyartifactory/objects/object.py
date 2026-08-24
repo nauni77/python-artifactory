@@ -80,19 +80,24 @@ class ArtifactoryObject:
         **kwargs,
     ) -> Response:
         """
+        Generic HTTP method request to Artifactory API, will be used from all other HTTP methods.
+
         :param method: HTTP method to use
         :param route: API Route
-        :param kwargs: Additional parameters to add the request
+        :param raise_for_status: Whether to raise an exception for HTTP errors
+        :param kwargs: Additional parameters to add the request (e.g. headers, params, data, JSON, ...)
         :return: An HTTP response
         """
 
         if self._access_token is not None:
+            # add Bearer token to kwargs 'headers' if access token is given
             headers = kwargs.get("headers", {})
             headers["Authorization"] = f"Bearer {self._access_token}"
             kwargs["headers"] = headers
 
             auth = None
         else:
+            # use authentication if Bearer token is not given
             auth = self._auth
 
         http_method = getattr(self.session, method)
