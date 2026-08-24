@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import logging
+from datetime import UTC
 
 from pyartifactory.exception import InvalidTokenDataError
 from pyartifactory.models.auth import AccessTokenModel, ApiKeyModel, PasswordModel
@@ -90,3 +92,37 @@ class ArtifactorySystem(ArtifactoryObject):
         logger.debug("Artifactory system information successfully retrieved")
         # yes, it's just plain text, not JSON, so we return the text content
         return response.text
+
+    def get_license_information(self) -> dict[str, str]:
+        """
+        Since: 3.3.0
+        Return information about the currently installed license.
+        :return: license information of artifactory instance as dict
+        """
+        response = self._get(f"api/{self._uri}/license")
+        logger.debug("Artifactory license information successfully retrieved")
+        # yes, it's just plain text, not JSON, so we return the text content
+        dict_license: dict[str, str] = response.json()
+        valid_through = datetime.datetime.strptime(dict_license["validThrough"], "%b %d, %Y").date()
+        remaining_days = (valid_through - datetime.date.today()).days
+        dict_license["remainingDays"] = str(remaining_days)
+        return dict_license
+
+    def install_license(self, license_key: str) -> bool:
+        """
+        Since: 3.3.0
+        Install a new license key on the artifactory instance.
+        :param license_key: license key to install
+        :return: True if license key was installed successfully, False otherwise
+        """
+        payload = {"licenseKey": license_key}
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json"
+        }
+        response = self._post(f"api/{self._uri}/license", json=payload, headers=headers, raise_for_status=False)
+        if response.status_code == 200:
+            logger.debug("Artifactory license key successfully installed")
+            return True
+        logger.error("Artifactory license key installation failed with status code %s", response.status_code)
+        return False
