@@ -5,7 +5,7 @@ description = "Typed interactions with the Jfrog Artifactory REST API"
 authors = [
     "Ananias CARVALHO <carvalhoananias@hotmail.com>",
     "Thomas GAUDIN <thomas.gaudin@centraliens-lille.org>",
-    "Helio Chissini de Castro <heliocastro@gmail.com"
+    "Helio Chissini de Castro <heliocastro@gmail.com>"
 ]
 license = "MIT"
 readme = "README.md"
@@ -59,7 +59,7 @@ use_parentheses = true
 line_length = 120
 
 [tool.black]
-target-version = ["py310"]
+target-version = ["py314"]
 line-length = 120
 include = '\.pyi?$'
 exclude = '''
