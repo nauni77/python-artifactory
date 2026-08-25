@@ -25,7 +25,7 @@ class ArtifactorySystem(ArtifactoryObject):
         :return: True if artifactory instance is alive, False otherwise
         """
         try:
-            response = self._get(f"api/{self._uri}/ping", raise_for_status=False)
+            response = self._get(f"artifactory/api/{self._uri}/ping", raise_for_status=False)
             if response.status_code == 200:
                 logger.debug("Artifactory ping successful")
                 return True
@@ -43,7 +43,7 @@ class ArtifactorySystem(ArtifactoryObject):
         """
         try:
             # json response: {"code" : "OK"}
-            response = self._get(f"api/v1/{self._uri}/readiness", raise_for_status=False)
+            response = self._get(f"artifactory/api/v1/{self._uri}/readiness", raise_for_status=False)
             if response.status_code == 200:
                 logger.debug("Artifactory readiness probe successful")
                 return True
@@ -61,7 +61,7 @@ class ArtifactorySystem(ArtifactoryObject):
         """
         try:
             # json response: {"code" : "OK"}
-            response = self._get(f"api/v1/{self._uri}/liveness", raise_for_status=False)
+            response = self._get(f"artifactory/api/v1/{self._uri}/liveness", raise_for_status=False)
             if response.status_code == 200:
                 logger.debug("Artifactory liveness probe successful")
                 return True
@@ -77,7 +77,7 @@ class ArtifactorySystem(ArtifactoryObject):
         Get version of the artifactory instance.
         :return: version of artifactory instance as string
         """
-        response = self._get(f"api/{self._uri}/version")
+        response = self._get(f"artifactory/api/{self._uri}/version")
         logger.debug("Artifactory version successfully retrieved")
         return response.json().get("version")
 
@@ -88,7 +88,7 @@ class ArtifactorySystem(ArtifactoryObject):
         Get system information of the artifactory instance.
         :return: system information of artifactory instance as dict
         """
-        response = self._get(f"api/{self._uri}")
+        response = self._get(f"artifactory/api/{self._uri}")
         logger.debug("Artifactory system information successfully retrieved")
         # yes, it's just plain text, not JSON, so we return the text content
         return response.text
@@ -99,7 +99,7 @@ class ArtifactorySystem(ArtifactoryObject):
         Return information about the currently installed license.
         :return: license information of artifactory instance as dict
         """
-        response = self._get(f"api/{self._uri}/license")
+        response = self._get(f"artifactory/api/{self._uri}/license")
         logger.debug("Artifactory license information successfully retrieved")
         # yes, it's just plain text, not JSON, so we return the text content
         dict_license: dict[str, str] = response.json()
@@ -120,7 +120,7 @@ class ArtifactorySystem(ArtifactoryObject):
             "accept": "application/json",
             "content-type": "application/json"
         }
-        response = self._post(f"api/{self._uri}/license", json=payload, headers=headers, raise_for_status=False)
+        response = self._post(f"artifactory/api/{self._uri}/license", json=payload, headers=headers, raise_for_status=False)
         if response.status_code == 200:
             logger.debug("Artifactory license key successfully installed")
             return True

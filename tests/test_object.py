@@ -3,7 +3,7 @@ from __future__ import annotations
 from pyartifactory import ArtifactoryArtifact
 from pyartifactory.models import AuthModel
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 ARTIFACT_REPO = "my_repository"
 

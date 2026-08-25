@@ -20,7 +20,7 @@ class ArtifactorySecurity(ArtifactoryObject):
         Get the encrypted password of the authenticated requestor.
         :return: str
         """
-        response = self._get(f"api/{self._uri}/encryptedPassword")
+        response = self._get(f"artifactory/api/{self._uri}/encryptedPassword")
         logger.debug("Encrypted password successfully delivered")
         return PasswordModel(**response.json())
 
@@ -71,7 +71,7 @@ class ArtifactorySecurity(ArtifactoryObject):
         Create an API key for the current user.
         :return: Error if API key already exists - use regenerate API key instead.
         """
-        response = self._post(f"api/{self._uri}/apiKey")
+        response = self._post(f"artifactory/api/{self._uri}/apiKey")
         logger.debug("API Key successfully created")
         return ApiKeyModel(**response.json())
 
@@ -80,7 +80,7 @@ class ArtifactorySecurity(ArtifactoryObject):
         Regenerate an API key for the current user
         :return: API key
         """
-        response = self._put(f"api/{self._uri}/apiKey")
+        response = self._put(f"artifactory/api/{self._uri}/apiKey")
         logger.debug("API Key successfully regenerated")
         return ApiKeyModel(**response.json())
 
@@ -89,7 +89,7 @@ class ArtifactorySecurity(ArtifactoryObject):
         Get the current user's own API key
         :return: API key
         """
-        response = self._get(f"api/{self._uri}/apiKey")
+        response = self._get(f"artifactory/api/{self._uri}/apiKey")
         logger.debug("API Key successfully delivered")
         return ApiKeyModel(**response.json())
 
@@ -98,7 +98,7 @@ class ArtifactorySecurity(ArtifactoryObject):
         Revokes the current user's API key
         :return: None
         """
-        self._delete(f"api/{self._uri}/apiKey")
+        self._delete(f"artifactory/api/{self._uri}/apiKey")
         logger.debug("API Key successfully revoked")
 
     def revoke_user_api_key(self, name: str) -> None:
@@ -107,5 +107,5 @@ class ArtifactorySecurity(ArtifactoryObject):
         :param name: name of the user to whom api key has to be revoked
         :return: None
         """
-        self._delete(f"api/{self._uri}/apiKey/{name}")
+        self._delete(f"artifactory/api/{self._uri}/apiKey/{name}")
         logger.debug("User API Key successfully revoked")

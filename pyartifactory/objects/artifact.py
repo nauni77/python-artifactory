@@ -63,7 +63,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
         try:
             artifact_as_posix = artifact_path.as_posix()
             artifact_as_url = urllib.parse.quote(artifact_as_posix)
-            response = self._get(f"api/storage/{artifact_as_url}")
+            response = self._get(f"artifactory/api/storage/{artifact_as_url}")
             try:
                 artifact_info: ArtifactInfoResponse = ArtifactFolderInfoResponse.model_validate(response.json())
             except ValidationError:
@@ -226,7 +226,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
             }
             if depth is not None:
                 params.update(depth=depth)
-            response = self._get(f"api/storage/{artifact_path}?list", params=params)
+            response = self._get(f"artifactory/api/storage/{artifact_path}?list", params=params)
             artifact_list: ArtifactListResponse = ArtifactListResponse.model_validate(response.json())
             return artifact_list
         except requests.exceptions.HTTPError as error:
@@ -254,7 +254,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
         artifact_path = artifact_path.lstrip("/")
         try:
             response = self._get(
-                f"api/storage/{artifact_path}",
+                f"artifactory/api/storage/{artifact_path}",
                 params={"properties": ",".join(properties)},
             )
             logger.debug("Artifact Properties successfully retrieved")
@@ -283,7 +283,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
         properties_param_str = self._format_properties(properties)
         try:
             self._put(
-                f"api/storage/{artifact_path}",
+                f"artifactory/api/storage/{artifact_path}",
                 params={
                     "recursive": int(recursive),
                     "properties": properties_param_str,
@@ -318,7 +318,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
         artifact_path = artifact_path.lstrip("/")
         try:
             self._patch(
-                f"api/metadata/{artifact_path}",
+                f"artifactory/api/metadata/{artifact_path}",
                 params={"recursiveProperties": int(recursive)},
                 headers={"Content-Type": "application/json"},
                 json={"props": properties},
@@ -338,7 +338,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
         :return: Artifact Stats
         """
         artifact_path = artifact_path.lstrip("/")
-        response = self._get(f"api/storage/{artifact_path}?stats")
+        response = self._get(f"artifactory/api/storage/{artifact_path}?stats")
         logger.debug("Artifact stats successfully retrieved")
         return ArtifactStatsResponse(**response.json())
 
@@ -353,7 +353,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
         artifact_new_path = artifact_new_path.lstrip("/")
         dry = 1 if dryrun else 0
 
-        self._post(f"api/copy/{artifact_current_path}?to={artifact_new_path}&dry={dry}")
+        self._post(f"artifactory/api/copy/{artifact_current_path}?to={artifact_new_path}&dry={dry}")
         logger.debug("Artifact %s successfully copied", artifact_current_path)
         return self.info(artifact_new_path)
 
@@ -369,7 +369,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
 
         dry = 1 if dryrun else 0
 
-        self._post(f"api/move/{artifact_current_path}?to={artifact_new_path}&dry={dry}")
+        self._post(f"artifactory/api/move/{artifact_current_path}?to={artifact_new_path}&dry={dry}")
         logger.debug("Artifact %s successfully moved", artifact_current_path)
         return self.info(artifact_new_path)
 

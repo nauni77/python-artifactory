@@ -18,7 +18,7 @@ from pyartifactory.models.artifact import (
     Checksums,
 )
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 ARTIFACT_REPO = "my_repository"
 ARTIFACT_PATH = f"{ARTIFACT_REPO}/file.txt"

@@ -52,7 +52,7 @@ class ArtifactoryPermission(ArtifactoryObject):
             raise PermissionAlreadyExistsError(f"Permission {permission_name} already exists")
         except PermissionNotFoundError:
             self._put(
-                f"api/{self._uri}/{permission_name}",
+                f"artifactory/api/{self._uri}/{permission_name}",
                 json=permission.model_dump(by_alias=True),
             )
             logger.debug("Permission %s successfully created", permission_name)
@@ -65,7 +65,7 @@ class ArtifactoryPermission(ArtifactoryObject):
         :return: Permission
         """
         try:
-            response = self._get(f"api/{self._uri}/{permission_name}")
+            response = self._get(f"artifactory/api/{self._uri}/{permission_name}")
             logger.debug("Permission %s found", permission_name)
             return (
                 Permission(**response.json()) if self._artifactory.api_version == 1 else PermissionV2(**response.json())
@@ -82,7 +82,7 @@ class ArtifactoryPermission(ArtifactoryObject):
         Lists all the permissions
         :return: A list of permissions
         """
-        response = self._get(f"api/{self._uri}")
+        response = self._get(f"artifactory/api/{self._uri}")
         logger.debug("List all permissions successful")
         return [SimplePermission(**permission) for permission in response.json()]
 
@@ -102,7 +102,7 @@ class ArtifactoryPermission(ArtifactoryObject):
         """
         permission_name = permission.name
         self._put(
-            f"api/{self._uri}/{permission_name}",
+            f"artifactory/api/{self._uri}/{permission_name}",
             json=permission.model_dump(by_alias=True),
         )
         logger.debug("Permission %s successfully updated", permission_name)
@@ -115,5 +115,5 @@ class ArtifactoryPermission(ArtifactoryObject):
         :return: None
         """
         self.get(permission_name)
-        self._delete(f"api/{self._uri}/{permission_name}")
+        self._delete(f"artifactory/api/{self._uri}/{permission_name}")
         logger.debug("Permission %s successfully deleted", permission_name)

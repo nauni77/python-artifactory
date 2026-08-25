@@ -22,7 +22,7 @@ from pyartifactory.models import (
     Run,
 )
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 
 BUILD_RUNS = BuildRuns(

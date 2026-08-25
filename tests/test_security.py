@@ -5,7 +5,7 @@ import responses
 from pyartifactory import ArtifactorySecurity
 from pyartifactory.models import ApiKeyModel, AuthModel, PasswordModel
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 PASSWORD = PasswordModel(password="test_password")  # noqa: S106
 API_KEY = ApiKeyModel(apiKey="test_api_key")

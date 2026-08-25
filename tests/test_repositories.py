@@ -19,7 +19,7 @@ from pyartifactory.models import (
     VirtualRepositoryResponse,
 )
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 
 SIMPLE_REPOSITORY = SimpleRepository(key="test_repository", type="local", url="some-url", packageType="docker")

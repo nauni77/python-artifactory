@@ -37,7 +37,7 @@ class ArtifactoryBuild(ArtifactoryObject):
         """
         try:
             response = self._get(
-                f"api/{self._uri}/{build_name}",
+                f"artifactory/api/{self._uri}/{build_name}",
             )
             logger.debug("Build Runs successfully retrieved")
         except requests.exceptions.HTTPError as error:
@@ -60,7 +60,7 @@ class ArtifactoryBuild(ArtifactoryObject):
         """
         try:
             response = self._get(
-                f"api/{self._uri}/{build_name}/{build_number}{properties.to_query_string()}",
+                f"artifactory/api/{self._uri}/{build_name}/{build_number}{properties.to_query_string()}",
             )
             logger.debug("Build Info successfully retrieved")
         except requests.exceptions.HTTPError as error:
@@ -75,7 +75,7 @@ class ArtifactoryBuild(ArtifactoryObject):
             # other exception from get_build_info are forwarded to caller.
             try:
                 # build does not exist, can be created here
-                self._put(f"api/{self._uri}", json=create_build_request.model_dump())
+                self._put(f"artifactory/api/{self._uri}", json=create_build_request.model_dump())
                 logging.debug(
                     "Build %s in %s successfully created",
                     create_build_request.number,
@@ -101,14 +101,14 @@ class ArtifactoryBuild(ArtifactoryObject):
         """
         try:
             self._get(
-                f"api/{self._uri}/{build_name}/{build_number}",
+                f"artifactory/api/{self._uri}/{build_name}/{build_number}",
             )
         except requests.exceptions.HTTPError as error:
             self._raise_exception(error)
         else:
             try:
                 response = self._post(
-                    f"api/{self._uri}/promote/{build_name}/{build_number}",
+                    f"artifactory/api/{self._uri}/promote/{build_name}/{build_number}",
                     json=promotion_request.model_dump(),
                 )
                 logging.debug(
@@ -127,7 +127,7 @@ class ArtifactoryBuild(ArtifactoryObject):
         """
         :return: BuildListResponse model object containing server response
         """
-        response = self._get(f"api/{self._uri}")
+        response = self._get(f"artifactory/api/{self._uri}")
         logger.debug("List all builds successful")
         return BuildListResponse.model_validate(response.json())
 
@@ -140,11 +140,11 @@ class ArtifactoryBuild(ArtifactoryObject):
             if delete_build.buildNumbers:
                 for _build_number in delete_build.buildNumbers:
                     self._get(
-                        f"api/{self._uri}/{delete_build.buildName}/{_build_number}",
+                        f"artifactory/api/{self._uri}/{delete_build.buildName}/{_build_number}",
                     )
                 # all build numbers exist
 
-            self._post(f"api/{self._uri}/delete", json=delete_build.model_dump())
+            self._post(f"artifactory/api/{self._uri}/delete", json=delete_build.model_dump())
 
             if delete_build.buildNumbers:
                 logger.debug("Builds %s deleted from %s", ",".join(delete_build.buildNumbers), delete_build.buildName)
@@ -161,13 +161,13 @@ class ArtifactoryBuild(ArtifactoryObject):
         """
         try:
             self._get(
-                f"api/{self._uri}/{build_name}",
+                f"artifactory/api/{self._uri}/{build_name}",
             )
         except requests.exceptions.HTTPError as error:
             self._raise_exception(error)
         else:
             try:
-                self._post(f"api/{self._uri}/rename/{build_name}?to={new_build_name}")
+                self._post(f"artifactory/api/{self._uri}/rename/{build_name}?to={new_build_name}")
                 logger.debug("Build %s successfully renamed to %s", build_name, new_build_name)
             except requests.exceptions.HTTPError as error:
                 self._raise_exception(error)
@@ -181,7 +181,7 @@ class ArtifactoryBuild(ArtifactoryObject):
         """
         try:
             response = self._get(
-                f"api/{self._uri}/{build_name}/{build_number}?diff={older_build_number}",
+                f"artifactory/api/{self._uri}/{build_name}/{build_number}?diff={older_build_number}",
             )
             logger.debug("Build Diff successfully retrieved between %s and %s", build_number, older_build_number)
         except requests.exceptions.HTTPError as error:

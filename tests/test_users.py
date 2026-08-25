@@ -9,7 +9,7 @@ from pyartifactory import ArtifactoryUser
 from pyartifactory.exception import UserAlreadyExistsError, UserNotFoundError
 from pyartifactory.models import AuthModel, NewUser, SimpleUser, User, UserResponse
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 SIMPLE_USER = SimpleUser(name="test_user", uri="https://some.uri")
 USER = UserResponse(name="test_user", email="test.test@test.com")

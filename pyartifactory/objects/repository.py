@@ -40,7 +40,7 @@ class ArtifactoryRepository(ArtifactoryObject):
         :return: Either a local, virtual, remote or federated repository
         """
         try:
-            response = self._get(f"api/{self._uri}/{repo_name}")
+            response = self._get(f"artifactory/api/{self._uri}/{repo_name}")
             response_data = response.json()
             rclass = None
 
@@ -104,7 +104,7 @@ class ArtifactoryRepository(ArtifactoryObject):
         except RepositoryNotFoundError:
             data = json.dumps(repo.model_dump(), default=custom_encoder)
             self._put(
-                f"api/{self._uri}/{repo_name}",
+                f"artifactory/api/{self._uri}/{repo_name}",
                 headers={"Content-Type": "application/json"},
                 data=data,
             )
@@ -142,7 +142,7 @@ class ArtifactoryRepository(ArtifactoryObject):
         repo_dict = json.dumps(repo.model_dump(exclude_unset=True), default=custom_encoder)
 
         self._post(
-            f"api/{self._uri}/{repo_name}",
+            f"artifactory/api/{self._uri}/{repo_name}",
             headers={"Content-Type": "application/json"},
             data=repo_dict,
         )
@@ -155,7 +155,7 @@ class ArtifactoryRepository(ArtifactoryObject):
         Lists all the repositories
         :return: A list of repositories
         """
-        response = self._get(f"api/{self._uri}")
+        response = self._get(f"artifactory/api/{self._uri}")
         logger.debug("List all repositories successful")
         return [SimpleRepository(**repository) for repository in response.json()]
 
@@ -166,5 +166,5 @@ class ArtifactoryRepository(ArtifactoryObject):
         :return: None
         """
 
-        self._delete(f"api/{self._uri}/{repo_name}")
+        self._delete(f"artifactory/api/{self._uri}/{repo_name}")
         logger.debug("Repository %s successfully deleted", repo_name)

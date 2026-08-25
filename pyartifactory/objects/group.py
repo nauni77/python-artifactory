@@ -30,7 +30,7 @@ class ArtifactoryGroup(ArtifactoryObject):
             logger.error("Group %s already exists", group_name)
             raise GroupAlreadyExistsError(f"Group {group_name} already exists")
         except GroupNotFoundError:
-            self._put(f"api/{self._uri}/{group_name}", json=group.model_dump())
+            self._put(f"artifactory/api/{self._uri}/{group_name}", json=group.model_dump())
             logger.debug("Group %s successfully created", group_name)
             return self.get(group.name)
 
@@ -41,7 +41,7 @@ class ArtifactoryGroup(ArtifactoryObject):
         :return: Found artifactory group
         """
         try:
-            response = self._get(f"api/{self._uri}/{name}", params={"includeUsers": True})
+            response = self._get(f"artifactory/api/{self._uri}/{name}", params={"includeUsers": True})
             logger.debug("Group %s found", name)
             return Group(**response.json())
         except requests.exceptions.HTTPError as error:
@@ -56,7 +56,7 @@ class ArtifactoryGroup(ArtifactoryObject):
         Lists all the groups
         :return: GroupList
         """
-        response = self._get(f"api/{self._uri}")
+        response = self._get(f"artifactory/api/{self._uri}")
         logger.debug("List all groups successful")
         return [Group(**group) for group in response.json()]
 
@@ -68,7 +68,7 @@ class ArtifactoryGroup(ArtifactoryObject):
         """
         group_name = group.name
         self.get(group_name)
-        self._post(f"api/{self._uri}/{group_name}", json=group.model_dump())
+        self._post(f"artifactory/api/{self._uri}/{group_name}", json=group.model_dump())
         logger.debug("Group %s successfully updated", group_name)
         return self.get(group_name)
 
@@ -79,5 +79,5 @@ class ArtifactoryGroup(ArtifactoryObject):
         :return: None
         """
         self.get(name)
-        self._delete(f"api/{self._uri}/{name}")
+        self._delete(f"artifactory/api/{self._uri}/{name}")
         logger.debug("Group %s successfully deleted", name)

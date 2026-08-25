@@ -7,7 +7,7 @@ from pyartifactory import ArtifactoryGroup
 from pyartifactory.exception import GroupAlreadyExistsError, GroupNotFoundError
 from pyartifactory.models import AuthModel, Group, PasswordModel
 
-URL = "http://localhost:8080/artifactory"
+URL = "http://localhost:8080"
 AUTH = ("user", "password_or_apiKey")
 NEW_GROUP = Group(name="test_group", description="test_group")
 GROUP_WITH_USERS = Group(name="test_group", userNames=["user1", "user2"])
