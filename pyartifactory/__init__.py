@@ -16,6 +16,7 @@ from pyartifactory.objects.permission import ArtifactoryPermission
 from pyartifactory.objects.repository import ArtifactoryRepository
 from pyartifactory.objects.security import ArtifactorySecurity
 from pyartifactory.objects.user import ArtifactoryUser
+from pyartifactory.objects.system import ArtifactorySystem
 
 __all__ = [
     "AccessTokenModel",
@@ -27,6 +28,7 @@ __all__ = [
     "ArtifactorySecurity",
     "ArtifactoryUser",
     "ArtifactoryBuild",
+    "ArtifactorySystem",
 ]
 
 with contextlib.suppress(PackageNotFoundError):

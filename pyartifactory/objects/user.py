@@ -17,6 +17,12 @@ class ArtifactoryUser(ArtifactoryObject):
     """
     Manipulate an artifactory user
     API details: https://docs.jfrog.com/administration/reference/getuserdetails
+
+    Mabe useful will be:
+    - Add or remove users from groups:
+      https://docs.jfrog.com/administration/reference/updateusergroups
+    - Change a user password
+      https://docs.jfrog.com/administration/reference/changeuserpassword
     """
     _uri_v2 = "access/api/v2/users"
 

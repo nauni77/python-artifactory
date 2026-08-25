@@ -7,21 +7,26 @@ import requests
 from requests import Response
 
 from pyartifactory.exception import ArtifactoryError, GroupAlreadyExistsError, GroupNotFoundError
-from pyartifactory.models.group import Group
+from pyartifactory.models.group import SimpleGroup, GroupDetails, NewGroup, GroupUpdateParamKeysEnum
 from pyartifactory.objects.object import ArtifactoryObject
 
 logger = logging.getLogger("pyartifactory")
 
 
 class ArtifactoryGroup(ArtifactoryObject):
-    """Models artifactory groups."""
+    """
+    Manipulate artifactory groups
+    API documentation: https://docs.jfrog.com/administration/reference/creategroup
 
-    _uri = "security/groups"
+    This is also moved from `/artifactory/` to `/access/` and needs to be updated!
+    """
 
-    def create(self, group: Group) -> Group:
+    _uri_v2 = "access/api/v2/groups"
+
+    def create(self, group: NewGroup) -> GroupDetails:
         """
         Creates a new group in Artifactory or replaces an existing group
-        :param group: Group to create
+        :param group: the group to create
         :return: Created group
         """
         group_name = group.name
@@ -30,54 +35,99 @@ class ArtifactoryGroup(ArtifactoryObject):
             logger.error("Group %s already exists", group_name)
             raise GroupAlreadyExistsError(f"Group {group_name} already exists")
         except GroupNotFoundError:
-            self._put(f"artifactory/api/{self._uri}/{group_name}", json=group.model_dump())
-            logger.debug("Group %s successfully created", group_name)
-            return self.get(group.name)
+            response: Response = self._post(f"{self._uri_v2}",
+                       headers={"accept": "application/json", "content-type": "application/json"},
+                       json=group.model_dump(exclude_none=True))
+            result_group: GroupDetails = GroupDetails(**response.json())
+            logger.debug("Group %s successfully created", result_group.name)
+            return result_group
 
-    def get(self, name: str) -> Group:
+
+    def get(self, group_name: str) -> GroupDetails:
         """
-        Get the details of an Artifactory Group
-        :param name: Name of the group to retrieve
-        :return: Found artifactory group
+        get the details of an Artifactory group
+        API reference: https://docs.jfrog.com/administration/reference/getgroupdetails
+
+        :param group_name: name of the group to retrieve
+        :return: artifactory group
         """
         try:
-            response = self._get(f"artifactory/api/{self._uri}/{name}", params={"includeUsers": True})
-            logger.debug("Group %s found", name)
-            return Group(**response.json())
+            response = self._get(f"{self._uri_v2}/{group_name}", headers={"accept": "application/json"})
+            logger.debug("Group %s found", group_name)
+            return GroupDetails(**response.json())
         except requests.exceptions.HTTPError as error:
             http_response: Union[Response, None] = error.response
             if isinstance(http_response, Response) and http_response.status_code in (404, 400):
-                logger.error("Group %s does not exist", name)
-                raise GroupNotFoundError(f"Group {name} does not exist")
+                logger.error("Group %s does not exist", group_name)
+                raise GroupNotFoundError(f"Group {group_name} does not exist")
             raise ArtifactoryError from error
 
-    def list(self) -> List[Group]:
+
+    def list(self) -> List[SimpleGroup]:
         """
-        Lists all the groups
-        :return: GroupList
+        lists all the groups
+        API reference: https://docs.jfrog.com/administration/reference/getgrouplist
+
+        :return: list of all groups in Artifactory
         """
-        response = self._get(f"artifactory/api/{self._uri}")
+        response = self._get(f"{self._uri_v2}")
         logger.debug("List all groups successful")
-        return [Group(**group) for group in response.json()]
+        return [SimpleGroup(**group) for group in response.json().get("groups", [])]
 
-    def update(self, group: Group) -> Group:
+
+    def update(self, group_name: str, values: dict[GroupUpdateParamKeysEnum, object]) -> GroupDetails:
         """
-        Updates an exiting group in Artifactory with the provided group details.
-        :param group: Group to be updated
-        :return: Updated group
+        updates an exiting group in Artifactory with the provided group details
+        API reference: https://docs.jfrog.com/administration/reference/updategroup
+
+        :param group_name: group name to be modified
+        :param values: dictionary of group details to be updated
+        :return: details of the updated group
         """
-        group_name = group.name
+        # check if group exists, if not, raise an exception
         self.get(group_name)
-        self._post(f"artifactory/api/{self._uri}/{group_name}", json=group.model_dump())
-        logger.debug("Group %s successfully updated", group_name)
-        return self.get(group_name)
 
-    def delete(self, name: str) -> None:
+        response: Response = self._patch(f"{self._uri_v2}/{group_name}",
+                    headers={"accept": "application/json", "content-type": "application/json"},
+                    json=values)
+        result: GroupDetails = GroupDetails(**response.json())
+        logger.debug(f"Group {group_name} successfully updated")
+        return result
+
+
+    def delete(self, group_name: str) -> None:
         """
-        Removes a group
-        :param name: Name of the group to delete
+        removes a group
+        API reference: https://docs.jfrog.com/administration/reference/deletegroup
+
+        :param group_name: name of the group to delete
         :return: None
         """
-        self.get(name)
-        self._delete(f"artifactory/api/{self._uri}/{name}")
-        logger.debug("Group %s successfully deleted", name)
+        # check if group exists, if not, raise an exception
+        self.get(group_name)
+        self._delete(f"{self._uri_v2}/{group_name}")
+        logger.debug(f"Group {group_name} successfully deleted")
+
+
+    def modify_group_members(self, group_name: str, add: list[str], remove: list[str]) -> GroupDetails:
+        """
+        Adds or removes members from a group.
+        API reference: https://docs.jfrog.com/administration/reference/updategroupmembers
+
+        :param group_name: name of the group to modify
+        :param add: list of usernames to add to the group
+        :param remove: list of usernames to remove from the group
+        :return: details of the updated group
+        """
+        # check if group exists, if not, raise an exception
+        self.get(group_name)
+
+        payload = {"add": add, "remove": remove}
+        response: Response = self._patch(f"{self._uri_v2}/{group_name}/members",
+                    headers={"accept": "application/json", "content-type": "application/json"},
+                    json=payload)
+
+        # response contains only the 'members' of this group, not the complete group details
+        result: GroupDetails = self.get(group_name)
+        logger.debug(f"Group {group_name} members successfully modified")
+        return result
