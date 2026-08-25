@@ -7,51 +7,53 @@ import requests
 from requests import Response
 
 from pyartifactory.exception import ArtifactoryError, UserAlreadyExistsError, UserNotFoundError
-from pyartifactory.models.user import NewUser, SimpleUser, User, UserResponse
+from pyartifactory.models.user import NewUser, SimpleUser, User, UserResponse, UserUpdateParamKeysEnum
 from pyartifactory.objects.object import ArtifactoryObject
 
 logger = logging.getLogger("pyartifactory")
 
 
 class ArtifactoryUser(ArtifactoryObject):
-    """Models an artifactory user."""
-
-    _uri = "security/users"
+    """
+    Manipulate an artifactory user
+    API details: https://docs.jfrog.com/administration/reference/getuserdetails
+    """
+    _uri_v2 = "access/api/v2/users"
 
     def create(self, user: NewUser) -> UserResponse:
         """
         Create user
+        API details: https://docs.jfrog.com/administration/reference/createuser
+
         :param user: NewUser object
         :return: User
         """
-        username = user.name
+        username = user.username
         try:
             self.get(username)
             logger.error("User %s already exists", username)
             raise UserAlreadyExistsError(f"User {username} already exists")
         except UserNotFoundError:
-            data = user.model_dump()
+            data = user.model_dump(exclude_none=True)
             data["password"] = user.password.get_secret_value()
-            self._put(f"artifactory/api/{self._uri}/{username}", json=data)
+            headers = {
+                "accept": "application/json",
+                "content-type": "application/json",
+            }
+            self._post(f"{self._uri_v2}", headers=headers, json=data)
             logger.debug("User %s successfully created", username)
-            return self.get(user.name)
+            return self.get(user.username)
 
     def get(self, name: str) -> UserResponse:
         """
-        Read user from artifactory. Fill object if exist
-        Since: 2.4.0 (Requires Artifactory Pro)
-
-        url = "https://{your_repo_uri}/artifactory/api/security/users/userName"
-        headers = {
-            "accept": "application/json",
-            "authorization": "Basic ••••"
-        }
+        Read user from artifactory. Fill object if existed.
+        API: https://docs.jfrog.com/administration/reference/getuserdetails
 
         :param name: Name of the user to retrieve
         :return: UserModel
         """
         try:
-            response = self._get(f"artifactory/api/{self._uri}/{name}")
+            response = self._get(f"{self._uri_v2}/{name}")
             logger.debug("User %s found", name)
             return UserResponse(**response.json())
         except requests.exceptions.HTTPError as error:
@@ -63,65 +65,79 @@ class ArtifactoryUser(ArtifactoryObject):
 
     def list(self) -> List[SimpleUser]:
         """
-        Since: 2.4.0
-        Note: From Artifactory release 7.49.3,
-        this API is being replaced by the new Security APIs available in the JFrog Platform.
-
-        Example:
-        url = "https://{your_repo_uri}/access/api/v2/users"
-        headers = {"accept": "application/json"}
-        response = requests.get(url, headers=headers)
-        print(response.text)
-
         Lists all the users
+        API: https://docs.jfrog.com/administration/reference/getuserlist
+
         :return: UserList
         """
-        response = self._get(f"artifactory/api/{self._uri}")
+        response = self._get(route=f"{self._uri_v2}", headers={"accept": "application/json"})
         logger.debug("List all users successful")
-        return [SimpleUser(**user) for user in response.json()]
+        return [SimpleUser(**user) for user in response.json().get("users", [])]
 
-    def update(self, user: User) -> UserResponse:
+    def update(self, username: str, values: dict[str, object]) -> UserResponse:
         """
         Updates an artifactory user
         API: https://docs.jfrog.com/administration/reference/updateuser
 
-        Example:
-        url = "https://{your_repo_uri}/access/api/v2/users/username"
-        headers = {
-            "accept": "application/json",
-            "content-type": "application/json"
-        }
-        response = requests.patch(url, headers=headers)
-        print(response.text)
+        All fields are optional;
+        if a specific field is not specified the value will not change.
+        Only put the data you want to change in the request body.
 
-        :param user: NewUser object
+        Attention: Groups are not supported during this update!
+
+        During an update the password only needs to be provided,
+        if the 'internal_password_disabled' changes from True to False.
+
+        :param username: NewUser object
+        :param values: Dictionary of values to update
         :return: UserModel
         """
-        username = user.name
+        username = username
+
+        # check if user exists, if not raise UserNotFoundError
         self.get(username)
-        self._post(
-            f"artifactory/api/{self._uri}/{username}",
-            json=user.model_dump(exclude={"lastLoggedIn", "realm"}),
+
+        data = values
+
+        # define application/json for the request
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+        }
+
+        logger.info(f"update existing user {username} with values: {values}")
+
+        self._patch(
+            f"{self._uri_v2}/{username}",
+            headers=headers,
+            json=data,
         )
+
         logger.debug("User %s successfully updated", username)
         return self.get(username)
 
-    def delete(self, name: str) -> None:
+    def delete(self, username: str) -> None:
         """
-        Remove user
-        :param name: Name of the user to delete
+        Delete user
+        API: https://docs.jfrog.com/administration/reference/deleteuser
+
+        :param username: Name of the user to delete
         :return: None
         """
-        self.get(name)
-        self._delete(f"artifactory/api/{self._uri}/{name}")
-        logger.debug("User %s successfully deleted", name)
+        self.get(username)
+        self._delete(f"{self._uri_v2 }/{username}")
+        logger.debug("User %s successfully deleted", username)
 
     def unlock(self, name: str) -> None:
         """
         Unlock user
-        Even if the user doesn't exist, it succeed too
+        API: https://docs.jfrog.com/administration/reference/unlockuser
+
         :param name: Name of the user to unlock
         :return none
         """
-        self._post(f"artifactory/api/security/unlockUsers/{name}")
+        # curl --request POST \
+        #      --url https://trepo.intra.vsa.de/access/api/v2/users/py_test_user/unlock \
+        #      --header 'authorization: Bearer my_token'
+        self._post(f"{self._uri_v2}/{name}/unlock")
         logger.debug("User % successfully unlocked", name)

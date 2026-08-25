@@ -92,7 +92,7 @@ class ArtifactoryObject:
         if self._access_token is not None:
             # add Bearer token to kwargs 'headers' if access token is given
             headers = kwargs.get("headers", {})
-            headers["Authorization"] = f"Bearer {self._access_token}"
+            headers["authorization"] = f"Bearer {self._access_token}"
             kwargs["headers"] = headers
 
             auth = None
@@ -109,6 +109,7 @@ class ArtifactoryObject:
             cert=self._cert,
             timeout=self._timeout,
         )
+
         if raise_for_status:
             response.raise_for_status()
         return response
