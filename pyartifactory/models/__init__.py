@@ -33,7 +33,7 @@ from .build import (
     Run,
     SimpleBuild,
 )
-from .group import Group, GroupDetails, NewGroup, SimpleGroup
+from .group import GroupDetails, NewGroup, SimpleGroup
 from .permission import Permission, PermissionV2, SimplePermission
 from .repository import (
     FederatedRepository,
@@ -68,7 +68,6 @@ __all__ = [
     "ApiKeyModel",
     "AuthModel",
     "PasswordModel",
-    "Group",
     "SimpleGroup",
     "GroupDetails",
     "NewGroup",
