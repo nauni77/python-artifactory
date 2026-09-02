@@ -28,7 +28,10 @@ logger = logging.getLogger("pyartifactory")
 
 
 class ArtifactoryRepository(ArtifactoryObject):
-    """Models an artifactory repository."""
+    """
+    Models an artifactory repository.
+    API reference: https://docs.jfrog.com/artifactory/reference/createrepository
+    """
 
     _uri = "repositories"
 

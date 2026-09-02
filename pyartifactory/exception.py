@@ -59,3 +59,12 @@ class InvalidTokenDataError(ArtifactoryError):
 
 class BuildNotFoundError(ArtifactoryError):
     """Requested build were not found"""
+
+class BadRequestError(ArtifactoryError):
+    """The request body is malformed or a required parameter is missing."""
+
+class BadCredentialsError(ArtifactoryError):
+    """The credentials provided are invalid."""
+
+class PermissionDeniedError(ArtifactoryError):
+    """The user does not have permission to perform the requested operation."""
