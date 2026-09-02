@@ -59,7 +59,7 @@ This library enables you to manage Artifactory resources such as users, groups, 
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.12+
 
 ## Install
 

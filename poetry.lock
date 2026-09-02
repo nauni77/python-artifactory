@@ -1033,6 +1033,27 @@ pytest = ">=2.7"
 dev = ["pre-commit", "tox"]
 
 [[package]]
+name = "pytest-order"
+version = "1.5.0"
+description = "pytest plugin to run tests in a specific order"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "pytest_order-1.5.0-py3-none-any.whl", hash = "sha256:667ba2b7303fe2c529848663e0a41dfb0cc4d64f09f87272e4a9a1751efb52b2"},
+    {file = "pytest_order-1.5.0.tar.gz", hash = "sha256:96acd7587b5a2855dcaa4a898288103d202894a61afd813adbc9b77aab04d90d"},
+]
+
+[package.dependencies]
+pytest = [
+    {version = ">=6.2.4", markers = "python_version < \"3.14\""},
+    {version = ">=7.4", markers = "python_version >= \"3.14\""},
+]
+
+[package.extras]
+dev = ["pytest-dependency (>=0.5.1)", "pytest-mock (>=1.11.0)", "pytest-xdist (>=1.29.0)"]
+
+[[package]]
 name = "python-discovery"
 version = "1.5.1"
 description = "Python interpreter discovery"
@@ -1304,5 +1325,5 @@ python-discovery = ">=1.4.2"
 
 [metadata]
 lock-version = "2.1"
-python-versions = "^3.14"
-content-hash = "7c55e759e85b3d893d0ea4a6d40d1fa8a56b4cadcaf5f3a072cee24514a1ca47"
+python-versions = "^3.12"
+content-hash = "56177e4156d3762dd1f51067fb4133d2baab3bb5e4d0a1f6634d7c4ecddb0002"
