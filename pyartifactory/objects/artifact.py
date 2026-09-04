@@ -78,25 +78,26 @@ class ArtifactoryArtifact(ArtifactoryObject):
 
     def deploy(
         self,
-        local_file_location: Union[Path, str],
-        artifact_path: Union[Path, str],
-        properties: Optional[Dict[str, List[str]]] = None,
+        local_file_location: Path | str,
+        artifact_path: Path | str,
+        properties: Dict[str, List[str]] | None = None,
         checksum_enabled: bool = False,
     ) -> ArtifactInfoResponse:
         """
         Deploy a file or directory.
         :param artifact_path: Path to artifactory in Artifactory
+        :param properties: Properties to set on the artifact
         :param local_file_location: Location of the file or folder to deploy
         :param checksum_enabled: Enable checksum generation and use it for validation of the deployment
         """
         local_file = Path(local_file_location)
-        artifact_folder = Path(artifact_path)
+        artifact_folder = Path("artifactory", artifact_path)
 
         if local_file.is_dir():
             for root, _, files in os.walk(local_file.as_posix()):
                 new_root = f"{artifact_folder}/{root[len(local_file.as_posix()) :]}"
                 for file in files:
-                    self.deploy(Path(f"artifactory/{root}/{file}"), Path(f"{new_root}/{file}"), properties, checksum_enabled)
+                    self.deploy(Path(f"{root}/{file}"), Path(f"{new_root}/{file}"), properties, checksum_enabled)
         else:
             properties_param_str = ""
             if properties is not None:
