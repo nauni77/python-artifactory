@@ -48,7 +48,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
             if not topdown:
                 yield info
 
-    def info(self, artifact_path: Union[Path, str]) -> ArtifactInfoResponse:
+    def info(self, artifact_path: Path | str) -> ArtifactInfoResponse:
         """
         Retrieve information about a file or a folder
 
@@ -90,8 +90,10 @@ class ArtifactoryArtifact(ArtifactoryObject):
         :param local_file_location: Location of the file or folder to deploy
         :param checksum_enabled: Enable checksum generation and use it for validation of the deployment
         """
+
         local_file = Path(local_file_location)
-        artifact_folder = Path("artifactory", artifact_path)
+        # don't use prefix because of recursion in case of directories
+        artifact_folder = Path(artifact_path)
 
         if local_file.is_dir():
             for root, _, files in os.walk(local_file.as_posix()):
@@ -99,6 +101,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
                 for file in files:
                     self.deploy(Path(f"{root}/{file}"), Path(f"{new_root}/{file}"), properties, checksum_enabled)
         else:
+            # add prefix to upload path, not used for recursion!
+            artifact_folder = Path("artifactory", artifact_path)
             properties_param_str = ""
             if properties is not None:
                 properties_param_str = ";".join(f"{k}={value}" for k, values in properties.items() for value in values)
@@ -131,7 +135,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
                     self._put(route=route, headers=headers, data=stream)
 
             logger.debug("Artifact %s successfully deployed", local_file)
-        return self.info(artifact_folder)
+
+        return self.info(artifact_path)
 
     @staticmethod
     def _get_path_prefix(artifact_path: str):
