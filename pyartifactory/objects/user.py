@@ -35,20 +35,31 @@ class ArtifactoryUser(ArtifactoryObject):
         :return: User
         """
         username = user.username
+
         try:
             self.get(username)
+        except UserNotFoundError:
+            # This should happen, because the user should not exist yet.
+            # We can proceed to create the user. Executing the creation of the user at except block
+            # will cause to hide the reason of the failure if the creation fails.
+            # So we just pass here and continue to create the user.
+            pass
+        else:
             logger.error("User %s already exists", username)
             raise UserAlreadyExistsError(f"User {username} already exists")
-        except UserNotFoundError:
-            data = user.model_dump(exclude_none=True)
-            data["password"] = user.password.get_secret_value()
-            headers = {
-                "accept": "application/json",
-                "content-type": "application/json",
-            }
-            self._post(f"{self._uri_v2}", headers=headers, json=data)
-            logger.debug("User %s successfully created", username)
-            return self.get(user.username)
+
+        data = user.model_dump(exclude_none=True)
+        data["password"] = user.password.get_secret_value()
+        headers = {
+            "accept": "application/json",
+            "content-type": "application/json",
+        }
+
+        self._post(f"{self._uri_v2}", headers=headers, json=data)
+
+        logger.debug("User %s successfully created", username)
+        return self.get(username)
+
 
     def get(self, name: str) -> UserResponse:
         """
