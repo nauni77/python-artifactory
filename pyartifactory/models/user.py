@@ -1,15 +1,14 @@
 """
 Definition of all user related models.
 """
-
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from enum import Enum
+from typing import List
 
 from pydantic import BaseModel, EmailStr, SecretStr
 
-from enum import Enum
 
 class UserUpdateParamKeysEnum(str, Enum):
     """Enum of possible user parameters."""
@@ -32,7 +31,7 @@ class UserUpdateParamKeysEnum(str, Enum):
 
 
 class SimpleUser(BaseModel):
-    """Models a simple user."""
+    """ Models a simple user, which is returned by the list of users and contains only real basic information. """
 
     username: str
     uri: str | None = None
@@ -40,13 +39,14 @@ class SimpleUser(BaseModel):
     realm: str | None = None
 
 
-class BaseUserModel(BaseModel):
+class UserBase(BaseModel):
     """
-    Models a base user.
+    Models a base user, which will be extended by NewUser, UserDetails, ... .
     https://www.jfrog.com/confluence/display/JFROG/Security+Configuration+JSON#SecurityConfigurationJSON-application/vnd.org.jfrog.artifactory.security.User+json
     """
 
     username: str
+    email: EmailStr | None = None
     admin: bool | None = None
     profile_updatable: bool | None = None
     disable_ui_access: bool | None = None
@@ -63,17 +63,16 @@ class BaseUserModel(BaseModel):
     platform_auditor: bool | None = None
 
 
-class User(BaseUserModel):
-    """Models a user."""
-    email: EmailStr | None = None
-
-
-class NewUser(User):
-    """Models a new user."""
+class NewUser(UserBase):
+    """ Models a new user. """
     password: SecretStr
 
-class UserResponse(User):
-    """Models a user response."""
+class UserDetails(UserBase):
+    """
+    Models a user response or update with the details.
+    At update you need to ignore the fields "last_logged_in" and "realm",
+    because they can't be converted automatically, or they are read-only and will be ignored by Artifactory.
+    """
     status: str | None = None
     last_logged_in: datetime | None = None
     realm: str | None = None

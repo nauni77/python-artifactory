@@ -10,9 +10,7 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class GroupUpdateParamKeysEnum(str, Enum):
-    """
-    Enum of possible group parameters
-    """
+    """ Enum of possible group parameters """
     name = "username"
     description = "description"
     auto_join = "auto_join"
@@ -30,7 +28,7 @@ class GroupUpdateParamKeysEnum(str, Enum):
 
 
 class SimpleGroup(BaseModel):
-    """Models a simple group"""
+    """ Models a simple group, which is returned by the list of groups and contains only real basic information. """
     group_name: str
     uri: str | None = None
 
@@ -40,22 +38,23 @@ class GroupBase(BaseModel):
     description: str | None = None
     auto_join: bool | None = None
     admin_privileges: bool | None = None
-    members: List[str] | None = None
+
+    members: List[str] | None = None        # only available in CREATE and GET - NOT UPDATE!
 
 class GroupDetails(GroupBase):
-    """Models a group"""
-    realm: str | None = None
-
-
-
-class NewGroup(GroupBase):
-    """Models a new group"""
-    external_id: str | None = None
+    """ Models a group, which is returned by getting details of a group and contains all information. """
+    realm: str | None = None                # only available in GET, not in CREATE or UPDATE
+    realm_attributes: str | None = None     # only available in GET, not in CREATE or UPDATE
+    external_id: str | None = None          # not available in GET
 
     # since Artifactory 7.128.0, the following fields are available
-    reports_manager: str | None = None
+    reports_manager: bool | None = None
     watch_manager: bool | None = None
     policy_manager: bool | None = None
     policy_viewer: bool | None = None
     manage_resources: bool | None = None
-    manage_webhook: bool | None = None
+    manage_webhook: bool | None = None      # not in GET
+
+class NewGroup(GroupDetails):
+    """Models a new group"""
+    pass

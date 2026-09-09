@@ -75,25 +75,41 @@ class ArtifactoryGroup(ArtifactoryObject):
         return [SimpleGroup(**group) for group in response.json().get("groups", [])]
 
 
-    def update(self, group_name: str, values: dict[GroupUpdateParamKeysEnum, object]) -> GroupDetails:
+    def update_partial(self, group_name: str,
+               data: dict[GroupUpdateParamKeysEnum, object]) -> GroupDetails:
         """
         updates an exiting group in Artifactory with the provided group details
         API reference: https://docs.jfrog.com/administration/reference/updategroup
 
         :param group_name: group name to be modified
-        :param values: dictionary of group details to be updated
+        :param data: dictionary of group details to be updated,
+                       if provided, it will be used to update the group - details_values will be ignored
         :return: details of the updated group
         """
         # check if group exists, if not, raise an exception
         self.get(group_name)
 
         response: Response = self._patch(f"{self._uri_v2}/{group_name}",
-                    headers={"accept": "application/json", "content-type": "application/json"},
-                    json=values)
+                                         headers={"accept": "application/json", "content-type": "application/json"},
+                                         json=data)
         result: GroupDetails = GroupDetails(**response.json())
         logger.debug(f"Group {group_name} successfully updated")
         return result
 
+    def update(self, group_name: str,
+               data: GroupDetails) -> GroupDetails:
+        """
+        updates an exiting group in Artifactory with the provided group details
+        API reference: https://docs.jfrog.com/administration/reference/updategroup
+
+        :param group_name: group name to be modified
+        :param values: dictionary of group details to be updated,
+                       if provided, it will be used to update the group - details_values will be ignored
+        :param data: optional GroupDetails object to be updated
+        :return: details of the updated group
+        """
+        values = data.model_dump(exclude_none=True) if data is not None else {}
+        return self.update_partial(group_name, values)
 
     def delete(self, group_name: str) -> None:
         """

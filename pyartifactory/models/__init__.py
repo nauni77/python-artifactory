@@ -46,7 +46,7 @@ from .repository import (
     VirtualRepository,
     VirtualRepositoryResponse,
 )
-from .user import BaseUserModel, NewUser, SimpleUser, User, UserResponse
+from .user import UserBase, NewUser, SimpleUser, UserDetails
 
 AnyRepositoryResponse = Union[
     LocalRepositoryResponse,
@@ -84,8 +84,8 @@ __all__ = [
     "VirtualRepository",
     "VirtualRepositoryResponse",
     "User",
-    "UserResponse",
-    "BaseUserModel",
+    "UserDetails",
+    "UserBase",
     "NewUser",
     "SimpleUser",
     "AnyRepositoryResponse",

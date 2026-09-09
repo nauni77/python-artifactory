@@ -7,7 +7,7 @@ import requests
 from requests import Response
 
 from pyartifactory.exception import ArtifactoryError, UserAlreadyExistsError, UserNotFoundError
-from pyartifactory.models.user import NewUser, SimpleUser, User, UserResponse, UserUpdateParamKeysEnum
+from pyartifactory.models.user import NewUser, SimpleUser, UserDetails
 from pyartifactory.objects.object import ArtifactoryObject
 
 logger = logging.getLogger("pyartifactory")
@@ -26,7 +26,7 @@ class ArtifactoryUser(ArtifactoryObject):
     """
     _uri_v2 = "access/api/v2/users"
 
-    def create(self, user: NewUser) -> UserResponse:
+    def create(self, user: NewUser) -> UserDetails:
         """
         Create user
         API details: https://docs.jfrog.com/administration/reference/createuser
@@ -61,7 +61,7 @@ class ArtifactoryUser(ArtifactoryObject):
         return self.get(username)
 
 
-    def get(self, name: str) -> UserResponse:
+    def get(self, name: str) -> UserDetails:
         """
         Read user from artifactory. Fill object if existed.
         API: https://docs.jfrog.com/administration/reference/getuserdetails
@@ -72,7 +72,7 @@ class ArtifactoryUser(ArtifactoryObject):
         try:
             response = self._get(f"{self._uri_v2}/{name}")
             logger.debug("User %s found", name)
-            return UserResponse(**response.json())
+            return UserDetails(**response.json())
         except requests.exceptions.HTTPError as error:
             http_response: Union[Response, None] = error.response
             if isinstance(http_response, Response) and http_response.status_code in (404, 400):
@@ -91,7 +91,7 @@ class ArtifactoryUser(ArtifactoryObject):
         logger.debug("List all users successful")
         return [SimpleUser(**user) for user in response.json().get("users", [])]
 
-    def update(self, username: str, values: dict[str, object]) -> UserResponse:
+    def update_partial(self, username: str, data: dict[str, object]) -> UserDetails:
         """
         Updates an artifactory user
         API: https://docs.jfrog.com/administration/reference/updateuser
@@ -105,16 +105,16 @@ class ArtifactoryUser(ArtifactoryObject):
         During an update the password only needs to be provided,
         if the 'internal_password_disabled' changes from True to False.
 
-        :param username: NewUser object
-        :param values: Dictionary of values to update
-        :return: UserModel
+        :param username: username of the user to update
+        :param data: Dictionary of values to update
+        :return: UserDetails
         """
         username = username
 
         # check if user exists, if not raise UserNotFoundError
         self.get(username)
 
-        data = values
+        data = data
 
         # define application/json for the request
         headers = {
@@ -122,7 +122,7 @@ class ArtifactoryUser(ArtifactoryObject):
             "content-type": "application/json",
         }
 
-        logger.info(f"update existing user {username} with values: {values}")
+        logger.info(f"update existing user {username} with values: {data}")
 
         self._patch(
             f"{self._uri_v2}/{username}",
@@ -132,6 +132,19 @@ class ArtifactoryUser(ArtifactoryObject):
 
         logger.debug("User %s successfully updated", username)
         return self.get(username)
+
+    def update(self, username: str, data: UserDetails) -> UserDetails:
+        """
+        This works only with Artifactory 7.128.0 and newer.
+        Use as update_partial, but with a UserDetails object instead of a dictionary.
+        API: https://docs.jfrog.com/administration/reference/updateuser
+
+        :param username: username of the user to update
+        :param data: User object
+        :return: UserDetails
+        """
+        values = data.model_dump(exclude_none=True, exclude={"last_logged_in", "groups", "status", "realm"}) if data is not None else {}
+        return self.update_partial(username, values)
 
     def delete(self, username: str) -> None:
         """
