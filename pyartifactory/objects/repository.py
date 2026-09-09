@@ -102,17 +102,20 @@ class ArtifactoryRepository(ArtifactoryObject):
         repo_name = repo.key
         try:
             self.get_repo(repo_name)
+        except RepositoryNotFoundError:
+            ... # expected behavior, repository should not exist before creation
+        else:
             logger.error("Repository %s already exists", repo_name)
             raise RepositoryAlreadyExistsError(f"Repository {repo_name} already exists")
-        except RepositoryNotFoundError:
-            data = json.dumps(repo.model_dump(), default=custom_encoder)
-            self._put(
-                f"artifactory/api/{self._uri}/{repo_name}",
-                headers={"Content-Type": "application/json"},
-                data=data,
-            )
-            logger.debug("Repository %s successfully created", repo_name)
-            return self.get_repo(repo_name)
+
+        data = json.dumps(repo.model_dump(), default=custom_encoder)
+        self._put(
+            f"artifactory/api/{self._uri}/{repo_name}",
+            headers={"Content-Type": "application/json"},
+            data=data,
+        )
+        logger.debug("Repository %s successfully created", repo_name)
+        return self.get_repo(repo_name)
 
     @overload
     def update_repo(self, repo: LocalRepository) -> LocalRepositoryResponse:
