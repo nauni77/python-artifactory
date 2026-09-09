@@ -32,15 +32,18 @@ class ArtifactoryGroup(ArtifactoryObject):
         group_name = group.name
         try:
             self.get(group_name)
+        except GroupNotFoundError:
+            ... # expected, group does not exist, so we can create it
+        else:
             logger.error("Group %s already exists", group_name)
             raise GroupAlreadyExistsError(f"Group {group_name} already exists")
-        except GroupNotFoundError:
-            response: Response = self._post(f"{self._uri_v2}",
-                       headers={"accept": "application/json", "content-type": "application/json"},
-                       json=group.model_dump(exclude_none=True))
-            result_group: GroupDetails = GroupDetails(**response.json())
-            logger.debug("Group %s successfully created", result_group.name)
-            return result_group
+
+        response: Response = self._post(f"{self._uri_v2}",
+                   headers={"accept": "application/json", "content-type": "application/json"},
+                   json=group.model_dump(exclude_none=True))
+        result_group: GroupDetails = GroupDetails(**response.json())
+        logger.debug("Group %s successfully created", result_group.name)
+        return result_group
 
 
     def get(self, group_name: str) -> GroupDetails:
