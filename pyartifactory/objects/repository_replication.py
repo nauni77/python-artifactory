@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Union, NoReturn
 
 import requests
-from requests import Response
 
-from pyartifactory.exception import ArtifactoryError, BadRequestError, \
-    BadCredentialsError, PermissionDeniedError, RepositoryNotFoundError
+from pyartifactory.enums import ServiceType
+from pyartifactory.exception import handle_exception
 from pyartifactory.models.repository_replication import ReplicationModel, ReplicationStatusModel
 from pyartifactory.objects.object import ArtifactoryObject
 
@@ -21,25 +19,6 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
 
     _uri_with_s = "artifactory/api/replications"
     _uri_without_s = "artifactory/api/replication"
-
-    # TODO: move to exceptions -> handle_exception function
-    def _handle_exception(self, repo_key: str, error: requests.exceptions.HTTPError) -> NoReturn:
-        http_response: Union[Response, None] = error.response
-        if isinstance(http_response, Response) and http_response.status_code == 400:
-            logger.error(f"Bad Request - Repository not found or invalid key. Repository: {repo_key}")
-            raise RepositoryNotFoundError(f"Bad Request - Repository not found or invalid key. Repository: {repo_key}")
-        elif isinstance(http_response, Response) and http_response.status_code == 401:
-            logger.error(f"Bad Credentials - Authentication failed. A valid token is required. Repository: {repo_key}")
-            raise BadCredentialsError(
-                f"Bad Credentials - Authentication failed. A valid token is required. Repository: {repo_key}")
-        elif isinstance(http_response, Response) and http_response.status_code == 403:
-            logger.error(f"Permission Denied - User does not have admin permissions.")
-            raise PermissionDeniedError(f"Permission Denied - User does not have admin permissions.")
-        elif isinstance(http_response, Response) and http_response.status_code == 404:
-            logger.error(f"Not Found - The specified repository does not exist. Repository: {repo_key}")
-            raise RepositoryNotFoundError(
-                f"Not Found - The specified repository does not exist. Repository: {repo_key}")
-        raise ArtifactoryError from error
 
     # Repositories operations
     def get(self, repo_key: str) -> ReplicationModel:
@@ -58,7 +37,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
             return ReplicationModel.model_validate(response_data)
 
         except requests.exceptions.HTTPError as error:
-            self._handle_exception(repo_key, error)
+            handle_exception(error, "retrieve repository replication configuration failed", ServiceType.REPOSITORY_REPLICATION)
 
 
     def set(self, repo_key: str, replication: ReplicationModel) -> None:
@@ -76,7 +55,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
             logger.info(f"replication model set successfully for repository '{repo_key}'")
 
         except requests.exceptions.HTTPError as error:
-            self._handle_exception(repo_key, error)
+            handle_exception(error, "set repository replication configuration failed", ServiceType.REPOSITORY_REPLICATION)
 
 
     def delete(self, repo_key: str) -> None:
@@ -90,7 +69,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
                          raise_for_status=True)
 
         except requests.exceptions.HTTPError as error:
-            self._handle_exception(repo_key, error)
+            handle_exception(error, "delete repository replication configuration failed", ServiceType.REPOSITORY_REPLICATION)
 
     def status(self, repo_key: str) -> ReplicationStatusModel:
         """ only for single replication, not for multi-replication - multi-replication needs Enterprise+ license. """
@@ -103,7 +82,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
             return ReplicationStatusModel.model_validate(response_data)
 
         except requests.exceptions.HTTPError as error:
-            self._handle_exception(repo_key, error)
+            handle_exception(error, "retrieve repository replication status failed", ServiceType.REPOSITORY_REPLICATION)
 
     def update(self, repo_key: str, replication: ReplicationModel) -> None:
         """
@@ -124,4 +103,4 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
             logger.info(f"replication model updated successfully: {response}")
 
         except requests.exceptions.HTTPError as error:
-            self._handle_exception(repo_key, error)
+            handle_exception(error, "update repository replication configuration failed", ServiceType.REPOSITORY_REPLICATION)

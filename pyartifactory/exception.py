@@ -105,6 +105,10 @@ def handle_exception(error: requests.exceptions.HTTPError,
                 logger.error(f"Bad Request - Repository not found or invalid key. Message: {message}")
                 raise RepositoryNotFoundError(
                     f"Bad Request - Repository not found or invalid key. Message: {message}") from error
+            elif service_type == ServiceType.REPOSITORY_REPLICATION:
+                logger.error(f"Bad Request - Repository replication not found or invalid key. Message: {message}")
+                raise RepositoryNotFoundError(
+                    f"Bad Request - Repository replication not found or invalid key. Message: {message}") from error
             elif service_type == ServiceType.USERS:
                 logger.error(f"Bad Request - User not found or invalid key. Message: {message}")
                 raise UserNotFoundError(
@@ -141,6 +145,10 @@ def handle_exception(error: requests.exceptions.HTTPError,
                 logger.error(f"Not Found - The specified repository does not exist or invalid key. Message: {message}")
                 raise RepositoryNotFoundError(
                     f"Not Found - The specified repository does not exist or invalid key. Message: {message}") from error
+            elif service_type == ServiceType.REPOSITORY_REPLICATION:
+                logger.error(f"Bad Request - Not Found, the specified repository does not exist. Message: {message}")
+                raise RepositoryNotFoundError(
+                    f"Bad Request - Repository replication not found or invalid key. Message: {message}") from error
             elif service_type == ServiceType.USERS:
                 logger.error(f"Not Found - The specified user does not exist or invalid key. Message: {message}")
                 raise UserNotFoundError(
