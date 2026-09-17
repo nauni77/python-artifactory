@@ -126,6 +126,8 @@ class ArtifactoryGroup(ArtifactoryObject):
         :param group_name: name of the group to delete
         :return: None
         """
+        # check if group exists, if not, raise an exception
+        self.get(group_name)
         self._delete(f"{self._uri_v2}/{group_name}")
         logger.debug(f"Group {group_name} successfully deleted")
 
@@ -140,6 +142,8 @@ class ArtifactoryGroup(ArtifactoryObject):
         :param remove: list of usernames to remove from the group
         :return: details of the updated group
         """
+        # check if group exists, if not, raise an exception
+        self.get(group_name)
         try:
             payload = {"add": add, "remove": remove}
             response: Response = self._patch(f"{self._uri_v2}/{group_name}/members",
