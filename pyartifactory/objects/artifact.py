@@ -11,7 +11,9 @@ import requests
 from pydantic import ValidationError
 from requests import Response
 
-from pyartifactory.exception import ArtifactNotFoundError, ArtifactoryError, BadPropertiesError, PropertyNotFoundError
+from pyartifactory.exception import (ArtifactNotFoundError,
+                                     BadPropertiesError, PropertyNotFoundError,
+                                     handle_exception)
 from pyartifactory.models.artifact import (
     ArtifactFileInfoResponse,
     ArtifactFolderInfoResponse,
@@ -21,6 +23,7 @@ from pyartifactory.models.artifact import (
     ArtifactStatsResponse,
     Checksums,
 )
+from pyartifactory.enums import ServiceType
 from pyartifactory.objects.object import ArtifactoryObject
 
 logger = logging.getLogger("pyartifactory")
@@ -70,11 +73,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
                 artifact_info = ArtifactFileInfoResponse.model_validate(response.json())
             return artifact_info
         except requests.exceptions.HTTPError as error:
-            http_response: Union[Response, None] = error.response
-            if isinstance(http_response, Response) and http_response.status_code == 404:
-                logger.error("Artifact %s does not exist", artifact_path)
-                raise ArtifactNotFoundError(f"Artifact {artifact_path} does not exist")
-            raise ArtifactoryError from error
+            handle_exception(error, str(artifact_path), ServiceType.ARTIFACTS)
+
 
     def deploy(
         self,
@@ -128,7 +128,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
                         )
                         logger.error(message)
                         raise ArtifactNotFoundError(message)
-                    raise ArtifactoryError from error
+                    handle_exception(error, str(artifact_path), ServiceType.ARTIFACTS)
             else:
                 headers["X-Checksum-Deploy"] = "false"
                 with local_file.open("rb") as stream:
@@ -240,7 +240,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
             if isinstance(http_response, Response) and http_response.status_code == 404:
                 logger.error("Artifact %s does not exist", artifact_path)
                 raise ArtifactNotFoundError(f"Artifact {artifact_path} does not exist")
-            raise ArtifactoryError from error
+            handle_exception(error, f"Artifact path: {artifact_path}", ServiceType.ARTIFACTS)
 
     def _format_properties(self, properties: Dict[str, List[str]]):
         properties_param_str = ""
@@ -269,7 +269,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
             http_response: Union[Response, None] = error.response
             if isinstance(http_response, Response) and http_response.status_code == 404:
                 raise PropertyNotFoundError(f"Properties {properties} were not found on artifact {artifact_path}")
-            raise ArtifactoryError from error
+            handle_exception(error, f"Artifact path: {artifact_path}", ServiceType.ARTIFACTS)
 
     def set_properties(
         self,
@@ -299,13 +299,13 @@ class ArtifactoryArtifact(ArtifactoryObject):
             return self.properties(artifact_path)
         except requests.exceptions.HTTPError as error:
             http_response: Union[Response, None] = error.response
-            if isinstance(http_response, Response) and http_response.status_code == 404:
-                logger.error("Artifact %s does not exist", artifact_path)
-                raise ArtifactNotFoundError(f"Artifact {artifact_path} does not exist")
             if isinstance(http_response, Response) and http_response.status_code == 400:
                 logger.error("A property value includes forbidden special characters")
                 raise BadPropertiesError("A property value includes forbidden special characters")
-            raise ArtifactoryError from error
+            elif isinstance(http_response, Response) and http_response.status_code == 404:
+                logger.error("Artifact %s does not exist", artifact_path)
+                raise ArtifactNotFoundError(f"Artifact {artifact_path} does not exist")
+            handle_exception(error, f"Artifact path: {artifact_path}", ServiceType.ARTIFACTS)
 
     def update_properties(
         self,
@@ -335,8 +335,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
             http_response: Union[Response, None] = error.response
             if isinstance(http_response, Response) and http_response.status_code == 400:
                 logger.error("Error updating artifact properties")
-                raise ArtifactoryError("Error updating artifact properties")
-            raise ArtifactoryError from error
+                raise BadPropertiesError("Error updating artifact properties")
+            handle_exception(error, f"Error updating artifact properties", ServiceType.ARTIFACTS)
 
     def stats(self, artifact_path: str) -> ArtifactStatsResponse:
         """

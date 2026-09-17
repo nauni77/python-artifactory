@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union
+from typing import List
 
 import requests
 from requests import Response
 
-from pyartifactory.exception import ArtifactoryError, GroupAlreadyExistsError, GroupNotFoundError
+from pyartifactory.enums import ServiceType
+from pyartifactory.exception import GroupAlreadyExistsError, GroupNotFoundError, handle_exception
 from pyartifactory.models.group import SimpleGroup, GroupDetails, NewGroup, GroupUpdateParamKeysEnum
 from pyartifactory.objects.object import ArtifactoryObject
 
@@ -38,12 +39,16 @@ class ArtifactoryGroup(ArtifactoryObject):
             logger.error("Group %s already exists", group_name)
             raise GroupAlreadyExistsError(f"Group {group_name} already exists")
 
-        response: Response = self._post(f"{self._uri_v2}",
-                   headers={"accept": "application/json", "content-type": "application/json"},
-                   json=group.model_dump(exclude_none=True))
-        result_group: GroupDetails = GroupDetails(**response.json())
-        logger.debug("Group %s successfully created", result_group.name)
-        return result_group
+        try:
+            response: Response = self._post(f"{self._uri_v2}",
+                       headers={"accept": "application/json", "content-type": "application/json"},
+                       json=group.model_dump(exclude_none=True))
+            result_group: GroupDetails = GroupDetails(**response.json())
+            logger.debug("Group %s successfully created", result_group.name)
+            return result_group
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, f"Group {group_name} creation failed", ServiceType.GROUPS)
+
 
 
     def get(self, group_name: str) -> GroupDetails:
@@ -59,11 +64,7 @@ class ArtifactoryGroup(ArtifactoryObject):
             logger.debug("Group %s found", group_name)
             return GroupDetails(**response.json())
         except requests.exceptions.HTTPError as error:
-            http_response: Union[Response, None] = error.response
-            if isinstance(http_response, Response) and http_response.status_code in (404, 400):
-                logger.error("Group %s does not exist", group_name)
-                raise GroupNotFoundError(f"Group {group_name} does not exist")
-            raise ArtifactoryError from error
+            handle_exception(error, f"Group {group_name} does not exist", ServiceType.GROUPS)
 
 
     def list(self) -> List[SimpleGroup]:
@@ -92,12 +93,15 @@ class ArtifactoryGroup(ArtifactoryObject):
         # check if group exists, if not, raise an exception
         self.get(group_name)
 
-        response: Response = self._patch(f"{self._uri_v2}/{group_name}",
-                                         headers={"accept": "application/json", "content-type": "application/json"},
-                                         json=data)
-        result: GroupDetails = GroupDetails(**response.json())
-        logger.debug(f"Group {group_name} successfully updated")
-        return result
+        try:
+            response: Response = self._patch(f"{self._uri_v2}/{group_name}",
+                                             headers={"accept": "application/json", "content-type": "application/json"},
+                                             json=data)
+            result: GroupDetails = GroupDetails(**response.json())
+            logger.debug(f"Group {group_name} successfully updated")
+            return result
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, f"Group {group_name} update failed", ServiceType.GROUPS)
 
     def update(self, group_name: str,
                data: GroupDetails) -> GroupDetails:
@@ -122,8 +126,6 @@ class ArtifactoryGroup(ArtifactoryObject):
         :param group_name: name of the group to delete
         :return: None
         """
-        # check if group exists, if not, raise an exception
-        self.get(group_name)
         self._delete(f"{self._uri_v2}/{group_name}")
         logger.debug(f"Group {group_name} successfully deleted")
 
@@ -138,15 +140,15 @@ class ArtifactoryGroup(ArtifactoryObject):
         :param remove: list of usernames to remove from the group
         :return: details of the updated group
         """
-        # check if group exists, if not, raise an exception
-        self.get(group_name)
+        try:
+            payload = {"add": add, "remove": remove}
+            response: Response = self._patch(f"{self._uri_v2}/{group_name}/members",
+                        headers={"accept": "application/json", "content-type": "application/json"},
+                        json=payload)
 
-        payload = {"add": add, "remove": remove}
-        response: Response = self._patch(f"{self._uri_v2}/{group_name}/members",
-                    headers={"accept": "application/json", "content-type": "application/json"},
-                    json=payload)
-
-        # response contains only the 'members' of this group, not the complete group details
-        result: GroupDetails = self.get(group_name)
-        logger.debug(f"Group {group_name} members successfully modified")
-        return result
+            # response contains only the 'members' of this group, not the complete group details
+            result: GroupDetails = self.get(group_name)
+            logger.debug(f"Group {group_name} members successfully modified")
+            return result
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, f"Group {group_name} - members modification failed", ServiceType.GROUPS)

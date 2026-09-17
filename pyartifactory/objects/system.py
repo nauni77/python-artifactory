@@ -4,8 +4,12 @@ import datetime
 import logging
 from datetime import UTC
 
-from pyartifactory.exception import InvalidTokenDataError
+import requests
+
+from pyartifactory.exception import InvalidTokenDataError, BadRequestError, BadCredentialsError, PermissionDeniedError, \
+    handle_exception
 from pyartifactory.models.auth import AccessTokenModel, ApiKeyModel, PasswordModel
+from pyartifactory.enums import ServiceType
 from pyartifactory.objects.object import ArtifactoryObject
 from requests.exceptions import ConnectionError
 
@@ -14,6 +18,13 @@ logger = logging.getLogger("pyartifactory")
 
 class ArtifactorySystem(ArtifactoryObject):
     """Models artifactory system requests."""
+
+    """ 
+    TODO: add methods for token management
+    https://docs.jfrog.com/artifactory/reference/createorrefreshtoken
+    https://docs.jfrog.com/artifactory/reference/gettokeninfos
+    https://docs.jfrog.com/artifactory/reference/revoketoken
+    """
 
     _uri = "system"
     _tokens_uri = "tokens"
@@ -97,6 +108,8 @@ class ArtifactorySystem(ArtifactoryObject):
         """
         Since: 3.3.0
         Return information about the currently installed license.
+        url: https://docs.jfrog.com/administration/reference/installlicense
+
         :return: license information of artifactory instance as dict
         """
         response = self._get(f"artifactory/api/{self._uri}/license")
@@ -108,21 +121,23 @@ class ArtifactorySystem(ArtifactoryObject):
         dict_license["remainingDays"] = str(remaining_days)
         return dict_license
 
-    def install_license(self, license_key: str) -> bool:
+    def install_license(self, license_key: str) -> None:
         """
         Since: 3.3.0
         Install a new license key on the artifactory instance.
+        url: https://docs.jfrog.com/administration/reference/installlicense
+
         :param license_key: license key to install
-        :return: True if license key was installed successfully, False otherwise
+        :return: None
+        :raises: ArtifactoryError if the license installation fails
         """
         payload = {"licenseKey": license_key}
         headers = {
             "accept": "application/json",
             "content-type": "application/json"
         }
-        response = self._post(f"artifactory/api/{self._uri}/license", json=payload, headers=headers, raise_for_status=False)
-        if response.status_code == 200:
+        try:
+            self._post(f"artifactory/api/{self._uri}/license", json=payload, headers=headers, raise_for_status=False)
             logger.debug("Artifactory license key successfully installed")
-            return True
-        logger.error("Artifactory license key installation failed with status code %s", response.status_code)
-        return False
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, "Artifactory license key installation failed", ServiceType.SYSTEM)

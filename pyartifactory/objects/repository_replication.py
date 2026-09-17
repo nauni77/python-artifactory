@@ -22,6 +22,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
     _uri_with_s = "artifactory/api/replications"
     _uri_without_s = "artifactory/api/replication"
 
+    # TODO: move to exceptions -> handle_exception function
     def _handle_exception(self, repo_key: str, error: requests.exceptions.HTTPError) -> NoReturn:
         http_response: Union[Response, None] = error.response
         if isinstance(http_response, Response) and http_response.status_code == 400:

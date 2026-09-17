@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Union
+from typing import List
 
 import requests
-from requests import Response
 
-from pyartifactory.exception import ArtifactoryError, UserAlreadyExistsError, UserNotFoundError
+from pyartifactory.enums import ServiceType
+from pyartifactory.exception import UserAlreadyExistsError, UserNotFoundError, handle_exception
 from pyartifactory.models.user import NewUser, SimpleUser, UserDetails
 from pyartifactory.objects.object import ArtifactoryObject
 
@@ -55,7 +55,10 @@ class ArtifactoryUser(ArtifactoryObject):
             "content-type": "application/json",
         }
 
-        self._post(f"{self._uri_v2}", headers=headers, json=data)
+        try:
+            self._post(f"{self._uri_v2}", headers=headers, json=data)
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, f"User {username} creation failed", ServiceType.USERS)
 
         logger.debug("User %s successfully created", username)
         return self.get(username)
@@ -74,11 +77,7 @@ class ArtifactoryUser(ArtifactoryObject):
             logger.debug("User %s found", name)
             return UserDetails(**response.json())
         except requests.exceptions.HTTPError as error:
-            http_response: Union[Response, None] = error.response
-            if isinstance(http_response, Response) and http_response.status_code in (404, 400):
-                logger.error("User %s does not exist", name)
-                raise UserNotFoundError(f"{name} does not exist")
-            raise ArtifactoryError from error
+            handle_exception(error, f"User {name} retrieval failed", ServiceType.USERS)
 
     def list(self) -> List[SimpleUser]:
         """

@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
 
 import requests
-from requests import Response
 
-from pyartifactory.exception import ArtifactoryError, BuildNotFoundError
+from pyartifactory.enums import ServiceType
+from pyartifactory.exception import ArtifactoryError, BuildNotFoundError, handle_exception
 from pyartifactory.models.build import (
     BuildCreateRequest,
     BuildDeleteRequest,
     BuildDiffResponse,
-    BuildError,
     BuildInfo,
     BuildListResponse,
     BuildPromotionRequest,
@@ -41,7 +39,7 @@ class ArtifactoryBuild(ArtifactoryObject):
             )
             logger.debug("Build Runs successfully retrieved")
         except requests.exceptions.HTTPError as error:
-            self._raise_exception(error)
+            handle_exception(error, f"error processing build runs request for build {build_name}", ServiceType.BUILDS)
 
         return BuildRuns(**response.json())
 
@@ -64,7 +62,7 @@ class ArtifactoryBuild(ArtifactoryObject):
             )
             logger.debug("Build Info successfully retrieved")
         except requests.exceptions.HTTPError as error:
-            self._raise_exception(error)
+            handle_exception(error, f"error processing build info request for build {build_name} number {build_number}", ServiceType.BUILDS)
 
         return BuildInfo(**response.json())
 
@@ -82,7 +80,7 @@ class ArtifactoryBuild(ArtifactoryObject):
                     create_build_request.name,
                 )
             except requests.exceptions.HTTPError as error:
-                self._raise_exception(error)
+                handle_exception(error, f"error creating build {create_build_request.name} number {create_build_request.number}", ServiceType.BUILDS)
         else:
             logger.error("Build %s in %s already exists", create_build_request.number, create_build_request.name)
             raise ArtifactoryError(f"Build {create_build_request.number} in {create_build_request.name} already exists")
@@ -104,7 +102,7 @@ class ArtifactoryBuild(ArtifactoryObject):
                 f"artifactory/api/{self._uri}/{build_name}/{build_number}",
             )
         except requests.exceptions.HTTPError as error:
-            self._raise_exception(error)
+            handle_exception(error, f"error processing build info request for build {build_name} number {build_number}", ServiceType.BUILDS)
         else:
             try:
                 response = self._post(
@@ -119,7 +117,7 @@ class ArtifactoryBuild(ArtifactoryObject):
                     promotion_request.targetRepo,
                 )
             except requests.exceptions.HTTPError as error:
-                self._raise_exception(error)
+                handle_exception(error, f"error promoting build {build_name} number {build_number}", ServiceType.BUILDS)
 
         return BuildPromotionResult(**response.json())
 
@@ -151,7 +149,7 @@ class ArtifactoryBuild(ArtifactoryObject):
             else:
                 logger.debug("Deleted all builds of %s", delete_build.buildName)
         except requests.exceptions.HTTPError as error:
-            self._raise_exception(error)
+            handle_exception(error, f"error deleting builds for build {delete_build.buildName}", ServiceType.BUILDS)
 
     def build_rename(self, build_name: str, new_build_name: str) -> None:
         """
@@ -164,13 +162,13 @@ class ArtifactoryBuild(ArtifactoryObject):
                 f"artifactory/api/{self._uri}/{build_name}",
             )
         except requests.exceptions.HTTPError as error:
-            self._raise_exception(error)
+            handle_exception(error, f"error processing build rename request for build {build_name}", ServiceType.BUILDS)
         else:
             try:
                 self._post(f"artifactory/api/{self._uri}/rename/{build_name}?to={new_build_name}")
                 logger.debug("Build %s successfully renamed to %s", build_name, new_build_name)
             except requests.exceptions.HTTPError as error:
-                self._raise_exception(error)
+                handle_exception(error, f"error processing build rename request for build {build_name}", ServiceType.BUILDS)
 
     def build_diff(self, build_name: str, build_number: str, older_build_number: str) -> BuildDiffResponse:
         """
@@ -185,16 +183,6 @@ class ArtifactoryBuild(ArtifactoryObject):
             )
             logger.debug("Build Diff successfully retrieved between %s and %s", build_number, older_build_number)
         except requests.exceptions.HTTPError as error:
-            self._raise_exception(error)
+            handle_exception(error, f"error processing build diff request for build {build_name} number {build_number}", ServiceType.BUILDS)
 
         return BuildDiffResponse(**response.json())
-
-    def _raise_exception(self, error: requests.exceptions.HTTPError):
-        http_response: Union[Response, None] = error.response
-        if isinstance(http_response, Response):
-            _http_error = BuildError(**http_response.json())
-            if http_response.status_code == 404:
-                raise BuildNotFoundError(_http_error.to_error_message()) from error
-            raise ArtifactoryError(_http_error.to_error_message()) from error
-        else:
-            raise ArtifactoryError from error

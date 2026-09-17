@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import List, Union, overload
+from typing import List, overload
 
 import requests
-from requests import Response
 
+from pyartifactory.enums import ServiceType
 from pyartifactory.exception import ArtifactoryError, RepositoryAlreadyExistsError, RepositoryNotFoundError
+from pyartifactory.exception import handle_exception
 from pyartifactory.models import AnyRepository, AnyRepositoryResponse
 from pyartifactory.models.repository import (
     FederatedRepository,
@@ -45,33 +46,26 @@ class ArtifactoryRepository(ArtifactoryObject):
         try:
             response = self._get(f"artifactory/api/{self._uri}/{repo_name}")
             response_data = response.json()
-            rclass = None
 
             try:
-                rclass = response_data["rclass"]
+                r_class = response_data["rclass"]
             except KeyError:
                 raise KeyError('"rclass" key not found in the response data received by artifactory.')
 
-            # Match to the correct repository type depending on the rclass
-            if rclass == RClassEnum.local:
+            # Match to the correct repository type depending on the r_class
+            if r_class == RClassEnum.local:
                 return LocalRepositoryResponse.model_validate(response_data)
-            elif rclass == RClassEnum.virtual:
+            elif r_class == RClassEnum.virtual:
                 return VirtualRepositoryResponse.model_validate(response_data)
-            elif rclass == RClassEnum.remote:
+            elif r_class == RClassEnum.remote:
                 return RemoteRepositoryResponse.model_validate(response_data)
-            elif rclass == RClassEnum.federated:
+            elif r_class == RClassEnum.federated:
                 return FederatedRepositoryResponse.model_validate(response_data)
             else:
                 # this should never happen and is a missing repotype in the library
-                raise ArtifactoryError(
-                    f"Unknown repository type found in response: {rclass}. Please report this issue.",
-                )
+                raise ArtifactoryError(f"Unknown repository type found in response: {r_class}. Please report this issue.")
         except requests.exceptions.HTTPError as error:
-            http_response: Union[Response, None] = error.response
-            if isinstance(http_response, Response) and http_response.status_code in (404, 400):
-                logger.error("Repository %s does not exist", repo_name)
-                raise RepositoryNotFoundError(f" Repository {repo_name} does not exist")
-            raise ArtifactoryError from error
+            handle_exception(error, f"Repository {repo_name} does not exist", ServiceType.REPOSITORIES)
 
     @overload
     def create_repo(self, repo: LocalRepository) -> LocalRepositoryResponse:
@@ -172,5 +166,7 @@ class ArtifactoryRepository(ArtifactoryObject):
         :return: None
         """
 
-        self._delete(f"artifactory/api/{self._uri}/{repo_name}")
-        logger.debug("Repository %s successfully deleted", repo_name)
+        try:
+            self._delete(f"artifactory/api/{self._uri}/{repo_name}")
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, f"repository {repo_name} delete fails", ServiceType.REPOSITORIES)
