@@ -24,7 +24,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
     def get(self, repo_key: str) -> ReplicationModel:
         """
         Find the repository and the replication configuration for it.
-
+        Documentation: https://docs.jfrog.com/artifactory/reference/getrepositoryreplicationconfiguration
         :param repo_key: Name/key of the repository to retrieve
         :return: The configured replication model for the repository
         """
@@ -43,6 +43,7 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
     def set(self, repo_key: str, replication: ReplicationModel) -> None:
         """
         Sets the replication configuration for a repository.
+        Documentation: https://docs.jfrog.com/artifactory/reference/setrepositoryreplicationconfiguration
         :param repo_key: Name of the repository to set replication for
         :param replication: The replication model to set
         """
@@ -60,8 +61,10 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
 
     def delete(self, repo_key: str) -> None:
         """
-        deletes one or more replications for a repository.
-        With multi-replication, all replications for the repository are deleted.
+        Deletes one or more replications for a repository. With multi-replication,
+        all replications for the repository are deleted.
+        Documentation: https://docs.jfrog.com/artifactory/reference/deleterepositoryreplicationconfiguration
+        :param repo_key: Name of the repository to delete replication for
         """
         try:
             self._delete(route=f"{self._uri_with_s}/{repo_key}",
@@ -71,22 +74,11 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
         except requests.exceptions.HTTPError as error:
             handle_exception(error, "delete repository replication configuration failed", ServiceType.REPOSITORY_REPLICATION)
 
-    def status(self, repo_key: str) -> ReplicationStatusModel:
-        """ only for single replication, not for multi-replication - multi-replication needs Enterprise+ license. """
-        try:
-            response = self._get(route=f"{self._uri_without_s}/{repo_key}",
-                                 headers={"accept": "application/json"},
-                                 raise_for_status=True)
-
-            response_data = response.json()
-            return ReplicationStatusModel.model_validate(response_data)
-
-        except requests.exceptions.HTTPError as error:
-            handle_exception(error, "retrieve repository replication status failed", ServiceType.REPOSITORY_REPLICATION)
 
     def update(self, repo_key: str, replication: ReplicationModel) -> None:
         """
         Updates the replication configuration for a repository.
+        Documentation: https://docs.jfrog.com/artifactory/reference/updaterepositoryreplicationconfiguration
         :param repo_key: Name of the repository to update
         :param replication: The replication model with updated values
         :return: The updated replication model
@@ -104,3 +96,44 @@ class ArtifactoryRepositoryReplication(ArtifactoryObject):
 
         except requests.exceptions.HTTPError as error:
             handle_exception(error, "update repository replication configuration failed", ServiceType.REPOSITORY_REPLICATION)
+
+
+    def status(self, repo_key: str) -> ReplicationStatusModel:
+        """
+        Only for single replication, not for multi-replication - multi-replication needs Enterprise+ license.
+        Documentation: https://docs.jfrog.com/artifactory/reference/getreplicationstatus
+        :param repo_key: Name of the repository to retrieve replication status for
+        :return: The replication status model for the repository
+        """
+        try:
+            response = self._get(route=f"{self._uri_without_s}/{repo_key}",
+                                 headers={"accept": "application/json"},
+                                 raise_for_status=True)
+
+            response_data = response.json()
+            return ReplicationStatusModel.model_validate(response_data)
+
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, "retrieve repository replication status failed", ServiceType.REPOSITORY_REPLICATION)
+
+
+    def trigger_replication(self, repo_key: str) -> None:
+        """
+        Pushes/Pull the replication for a repository. If a multi-replication is configured,
+        all replications for the repository are pushed. Triggers a push, if repository is a local repository.
+        A pull is triggered, if repository is a remote repository.
+        Documentation: https://docs.jfrog.com/artifactory/reference/pushreplication
+        :param repo_key: Name of the repository to push replication for
+        """
+        try:
+            self._post(route=f"{self._uri_without_s}/execute/{repo_key}",
+                       headers={"accept": "application/json",
+                                "content-type": "application/json"},
+                       raise_for_status=True)
+
+            logger.info(f"replication pushed successfully for repository '{repo_key}'")
+
+        except requests.exceptions.HTTPError as error:
+            handle_exception(error, "push repository replication failed", ServiceType.REPOSITORY_REPLICATION)
+
+
