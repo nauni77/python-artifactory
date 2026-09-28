@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import datetime
 import logging
-from datetime import UTC
 
 import requests
-
-from pyartifactory.exception import InvalidTokenDataError, BadRequestError, BadCredentialsError, PermissionDeniedError, \
-    handle_exception
-from pyartifactory.models.auth import AccessTokenModel, ApiKeyModel, PasswordModel
-from pyartifactory.enums import ServiceType
-from pyartifactory.objects.object import ArtifactoryObject
 from requests.exceptions import ConnectionError
+
+from pyartifactory.enums import ServiceType
+from pyartifactory.exception import handle_exception
+from pyartifactory.objects.object import ArtifactoryObject
 
 logger = logging.getLogger("pyartifactory")
 
@@ -28,6 +25,7 @@ class ArtifactorySystem(ArtifactoryObject):
 
     _uri = "system"
     _tokens_uri = "tokens"
+    _artifactory_uri = "artifactory"
 
     def artifactory_ping(self) -> bool:
         """
@@ -141,3 +139,16 @@ class ArtifactorySystem(ArtifactoryObject):
             logger.debug("Artifactory license key successfully installed")
         except requests.exceptions.HTTPError as error:
             handle_exception(error, "Artifactory license key installation failed", ServiceType.SYSTEM)
+
+
+    def get_background_tasks(self) -> list[dict[str, str]]:
+        """
+        Since: 3.3.0
+        Get a list of background tasks currently running on the artifactory instance.
+        url: https://docs.jfrog.com/administration/reference/backgroundtasks
+
+        :return: list of background tasks as dict
+        """
+        response = self._get(f"{self._artifactory_uri}/api/tasks")
+        logger.debug("Artifactory background tasks successfully retrieved")
+        return response.json()
