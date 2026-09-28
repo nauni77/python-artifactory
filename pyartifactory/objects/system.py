@@ -8,6 +8,7 @@ from requests.exceptions import ConnectionError
 
 from pyartifactory.enums import ServiceType
 from pyartifactory.exception import handle_exception
+from pyartifactory.models.system import StorageInfo
 from pyartifactory.objects.object import ArtifactoryObject
 
 logger = logging.getLogger("pyartifactory")
@@ -152,3 +153,35 @@ class ArtifactorySystem(ArtifactoryObject):
         response = self._get(f"{self._artifactory_uri}/api/tasks")
         logger.debug("Artifactory background tasks successfully retrieved")
         return response.json()
+
+    def get_storage_summary_info(self) -> StorageInfo:
+        """
+        Since: 3.3.0
+        Get storage summary information of the artifactory instance.
+        url: https://docs.jfrog.com/artifactory/reference/getstoragesummaryinfo
+
+        :return: storage summary information of artifactory instance as dict
+        """
+        response = self._get(f"{self._artifactory_uri}/api/storageinfo",
+                             headers={"accept": "application/json"})
+        logger.debug("Artifactory storage summary information successfully retrieved")
+
+        return StorageInfo.model_validate(response.json())
+
+    def refresh_storage_summary_info(self) -> bool:
+        """
+        Since: 3.3.0
+        Refresh storage summary information of the artifactory instance.
+        url: https://docs.jfrog.com/artifactory/reference/refreshstoragesummaryinfo
+
+        :return: True if the storage summary information was successfully scheduled for refresh,
+                 False otherwise
+        """
+        response = self._post(f"{self._artifactory_uri}/api/storageinfo/calculate",
+                              headers={"accept": "application/json"})
+        logger.debug(f"{response.text}")
+
+        if response.status_code == 202:
+            return True
+        else:
+            return False
