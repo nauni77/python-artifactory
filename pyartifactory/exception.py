@@ -141,34 +141,30 @@ def handle_exception(error: requests.exceptions.HTTPError,
             raise PermissionDeniedError(
                 f"Permission Denied - User does not have admin permissions. Message: {message}") from error
         elif http_response.status_code == 404:
+            # Logging of not found errors is not useful,
+            # because often the user is trying to find out if a repository, user, group or permission exists.
             if service_type == ServiceType.REPOSITORIES:
-                logger.error(f"Not Found - The specified repository does not exist or invalid key. Message: {message}")
                 raise RepositoryNotFoundError(
                     f"Not Found - The specified repository does not exist or invalid key. Message: {message}") from error
             elif service_type == ServiceType.REPOSITORY_REPLICATION:
-                logger.error(f"Bad Request - Not Found, the specified repository does not exist. Message: {message}")
                 raise RepositoryNotFoundError(
                     f"Bad Request - Repository replication not found or invalid key. Message: {message}") from error
             elif service_type == ServiceType.USERS:
-                logger.error(f"Not Found - The specified user does not exist or invalid key. Message: {message}")
                 raise UserNotFoundError(
                     f"Not Found - The specified user does not exist or invalid key. Message: {message}") from error
             elif service_type == ServiceType.GROUPS:
-                logger.error(f"Not Found - The specified group does not exist or invalid key. Message: {message}")
                 raise GroupNotFoundError(
                     f"Not Found - The specified group does not exist or invalid key. Message: {message}") from error
             elif service_type == ServiceType.PERMISSIONS:
-                logger.error(f"Not Found - The specified permission does not exist or invalid key. Message: {message}")
                 raise PermissionNotFoundError(
                     f"Not Found - The specified permission does not exist or invalid key. Message: {message}") from error
             elif service_type == ServiceType.ARTIFACTS:
-                logger.error(f"Not Found - The specified artifact does not exist or invalid key. Message: {message}")
                 raise ArtifactNotFoundError(
                     f"Not Found - The specified artifact does not exist or invalid key. Message: {message}") from error
             else:
-                logger.error(f"Not Found - The specified repository does not exist or invalid key. Message: {message}")
+                logger.error(f"Not found error - something does not exist or invalid key. Message: {message}")
                 raise NotFoundError(
-                    f"Not Found - The specified repository does not exist or invalid key. Message: {message}") from error
+                    f"Not found error - something does not exist or invalid key. Message: {message}") from error
         elif http_response.status_code == 409:
             logger.error(f"Conflict - Import still in progress, or a worker vetoed deletion. Message: {message}")
             raise ArtifactoryError(
