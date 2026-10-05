@@ -30,7 +30,7 @@ classifiers = [
 python = "^3.12"
 requests = "^2.34.2"
 typing_extensions = "^4.16.0"
-pydantic = {extras = ["email"], version = "^2.13.4"}
+pydantic = {extras = ["email"], version = "^2.13.5"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.289"
@@ -43,7 +43,7 @@ detect-secrets = "^1.5.0"
 pytest-cov = "^4.1.0"
 mypy = "^1.20.2"
 types-urllib3 = "^1.26.25.14"
-types-requests = "^2.33.0.20260712"
+types-requests = "^2.33.0.20260906"
 pytest-order = "^1.5.0"
 pytest-md = "^0.2.0"
 pytest-emoji = "^0.2.0"
@@ -176,3 +176,8 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.bandit]
 exclude_dirs = ["tests"]
+
+[tool.poetry.requires-plugins]
+poethepoet = { version = "^0.48.0", extras = ["poetry_plugin"] }
+poetry-plugin-up = { version = "^0.9.0", extras = ["poetry_plugin"] }
+poetry-plugin-gitversion = { version = "^0.1.5", extras = ["poetry_plugin"] }
