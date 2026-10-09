@@ -5,6 +5,7 @@ from typing import Optional, Tuple, Union
 from pydantic import SecretStr
 
 from pyartifactory.models.auth import AuthModel
+from pyartifactory.objects.aql import ArtifactoryAQL
 from pyartifactory.objects.artifact import ArtifactoryArtifact
 from pyartifactory.objects.build import ArtifactoryBuild
 from pyartifactory.objects.group import ArtifactoryGroup
@@ -38,6 +39,8 @@ class Artifactory:
             api_version=api_version,
             timeout=timeout,
         )
+
+        self.aql = ArtifactoryAQL(self.artifactory)
         self.users = ArtifactoryUser(self.artifactory)
         self.groups = ArtifactoryGroup(self.artifactory)
         self.security = ArtifactorySecurity(self.artifactory)
