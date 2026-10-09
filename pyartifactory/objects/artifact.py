@@ -30,7 +30,21 @@ logger = logging.getLogger("pyartifactory")
 
 
 class ArtifactoryArtifact(ArtifactoryObject):
-    """Models an artifactory artifact."""
+    """
+    Models an artifactory artifact access.
+    """
+
+    @staticmethod
+    def _get_path_prefix(artifact_path: str):
+        if artifact_path.startswith("/"):
+            artifact_path = artifact_path[1:]
+        return artifact_path.rsplit("/", 1)[0] + "/" if "/" in artifact_path else ""
+
+    @staticmethod
+    def _remove_prefix(_str: str, prefix: str) -> str:
+        if _str.startswith(prefix):
+            return _str[len(prefix):]
+        raise ValueError(f"Input string, '{_str}', doesn't have the prefix: '{prefix}'")
 
     def _walk(self, artifact_path: str, topdown: bool = True) -> Iterator[ArtifactInfoResponse]:
         """Iterate over artifact (file or directory) recursively.
@@ -84,6 +98,14 @@ class ArtifactoryArtifact(ArtifactoryObject):
         checksum_enabled: bool = False,
     ) -> ArtifactInfoResponse:
         """
+        API:
+        - Deploy Artifact or Create Directory
+          https://docs.jfrog.com/artifactory/reference/deployartifact
+        - Deploy Artifact by Checksum, if checksum already exists it will just be delivered but not uploaded
+          https://docs.jfrog.com/artifactory/reference/deployartifactbychecksum
+        - Deploy Artifacts from Archive, zip, tar, tar.gz. tgz is supported, only the extracted files will be deployed, not the archive itself
+          https://docs.jfrog.com/artifactory/reference/deployartifactsfromarchive
+
         Deploy a file or directory.
         :param artifact_path: Path to artifactory in Artifactory
         :param properties: Properties to set on the artifact
@@ -138,17 +160,7 @@ class ArtifactoryArtifact(ArtifactoryObject):
 
         return self.info(artifact_path)
 
-    @staticmethod
-    def _get_path_prefix(artifact_path: str):
-        if artifact_path.startswith("/"):
-            artifact_path = artifact_path[1:]
-        return artifact_path.rsplit("/", 1)[0] + "/" if "/" in artifact_path else ""
 
-    @staticmethod
-    def _remove_prefix(_str: str, prefix: str) -> str:
-        if _str.startswith(prefix):
-            return _str[len(prefix) :]
-        raise ValueError(f"Input string, '{_str}', doesn't have the prefix: '{prefix}'")
 
     def _download(self, artifact_path: str, local_directory_path: Optional[Path] = None) -> Path:
         """
@@ -187,12 +199,38 @@ class ArtifactoryArtifact(ArtifactoryObject):
             self._get(f"{artifact_path_url}", stream=True).iter_content(chunk_size=chunk_size),
         )
 
+    def retrieve(self, repo_key: str, file_path: str) -> Path | None:
+        """
+        interesting new API:
+
+        retrieve artifact
+        https://docs.jfrog.com/artifactory/reference/retrieveartifact
+
+        retrieve folder or repository archive
+        https://docs.jfrog.com/artifactory/reference/retrievefolderorrepositoryarchive
+
+        artifacts sync download (to trigger caching on remote repositories)
+        -> download without downloading the file to the client. Just show the download progress.
+        https://docs.jfrog.com/artifactory/reference/artifactsyncdownload
+
+        Download an artifact (file) into local directory.
+        """
+        # not needed just because of "old" download method
+        #artifact_path: str = f"{repo_key}/{file_path}"
+
+        # https://{jfrog_url}/artifactory/{repoKey}/{filePath}
+        # TODO: N.I.Y.
+        raise NotImplementedError("N.I.Y.")
+
     def download(self, artifact_path: str, local_directory_path: str = ".") -> Path:
         """
-        Download artifact (file or directory) into local directory.
-        :param artifact_path: Path to file or directory in Artifactory
-        :param local_directory_path: Local path to where the artifact will be downloaded
-        :return: File name
+        TODO: This is not working anymore! Just create an exception and an empty file in root project.
+
+        Download an artifact (file or directory) into local directory.
+
+        :param artifact_path: Path to file or directory in Artifactory, includes the repository name
+        :param local_directory_path: Local path to where the artifact will be downloaded, default "."
+        :return: name of the created file
         """
         artifact_path = artifact_path.rstrip("/")
         basename = artifact_path.split("/")[-1]
@@ -207,22 +245,22 @@ class ArtifactoryArtifact(ArtifactoryObject):
                 self._download(full_path, local_path.parent)
         return Path(local_directory_path).joinpath(basename)
 
+
     def list(
         self,
         artifact_path: str,
         recursive: bool = True,
-        depth: Optional[int] = None,
-        list_folders: bool = True,
-    ) -> ArtifactListResponse:
+        depth: int | None = None,
+        list_folders: bool = True) -> ArtifactListResponse:
         """
+        Get Storage Item Information
         Retrieve a list of files or a folders
-
-        See https://www.jfrog.com/confluence/display/JFROG/Artifactory+REST+API#ArtifactoryRESTAPI-FileList
+        API: https://docs.jfrog.com/artifactory/reference/getstorageitem
 
         :param artifact_path: Path to folder in Artifactory
         :param recursive: Recursively retrieve files and folders
         :param depth: The depth to recursively retrieve
-        :param list_folders: Whether or not to include folders in the response
+        :param list_folders: True, include folders in the response; False, only include files in the response
         :return: A list of artifacts in Artifactory
         """
         try:
@@ -350,6 +388,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
 
     def copy(self, artifact_current_path: str, artifact_new_path: str, dryrun: bool = False) -> ArtifactInfoResponse:
         """
+        API: https://docs.jfrog.com/artifactory/reference/copyitem
+
         :param artifact_current_path: Current path to file
         :param artifact_new_path: New path to file
         :param dryrun: Dry run
@@ -365,6 +405,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
 
     def move(self, artifact_current_path: str, artifact_new_path: str, dryrun: bool = False) -> ArtifactInfoResponse:
         """
+        API: https://docs.jfrog.com/artifactory/reference/moveitem
+
         :param artifact_current_path: Current path to file
         :param artifact_new_path: New path to file
         :param dryrun: Dry run
@@ -381,6 +423,8 @@ class ArtifactoryArtifact(ArtifactoryObject):
 
     def delete(self, artifact_path: str) -> None:
         """
+        API: https://docs.jfrog.com/artifactory/reference/deleteitem
+
         :param artifact_path: Path to file in Artifactory
         """
         artifact_path = artifact_path.lstrip("/")
