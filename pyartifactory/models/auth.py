@@ -17,7 +17,7 @@ class AuthModel(BaseModel):
     access_token: Optional[str] = None
     verify: Union[bool, str] = True
     cert: Optional[str] = None
-    api_version: int = 1
+    api_version: int = 2
     timeout: Optional[int] = None
 
 
