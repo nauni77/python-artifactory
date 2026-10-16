@@ -48,15 +48,10 @@ from .repository import (
 )
 from .user import UserBase, NewUser, SimpleUser, UserDetails
 
-AnyRepositoryResponse = Union[
-    LocalRepositoryResponse,
-    VirtualRepositoryResponse,
-    RemoteRepositoryResponse,
-    FederatedRepositoryResponse,
-]
+AnyRepositoryResponse = LocalRepositoryResponse | VirtualRepositoryResponse | RemoteRepositoryResponse | FederatedRepositoryResponse
 
-AnyRepository = Union[LocalRepository, VirtualRepository, RemoteRepository, FederatedRepository]
-AnyPermission = Union[Permission, PermissionV2]
+AnyRepository = LocalRepository | VirtualRepository | RemoteRepository | FederatedRepository
+AnyPermission = Permission | PermissionV2
 
 __all__ = [
     "ArtifactFileInfoResponse",

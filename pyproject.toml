@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "PyArtifactory"
-version = "2.11.3_dev"
+version = "0.0.0_dev"
 description = "Typed interactions with the Jfrog Artifactory REST API"
 authors = [
     "Ananias CARVALHO <carvalhoananias@hotmail.com>",
@@ -30,20 +30,20 @@ classifiers = [
 python = "^3.12"
 requests = "^2.34.2"
 typing_extensions = "^4.16.0"
-pydantic = {extras = ["email"], version = "^2.13.5"}
+pydantic = {extras = ["email"], version = "^2.14.1"}
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.0.289"
-pytest = "^7.4.4"
-black = "^23.12.1"
-pre-commit = "^2.21.0"
-responses = "^0.23.3"
-pytest-mock = "^2.0.0"
+ruff = "^0.17.1"
+pytest = "^9.1.1"
+black = "^26.10.1"
+pre-commit = "^4.7.0"
+responses = "^0.26.3"
+pytest-mock = "^3.16.0"
 detect-secrets = "^1.5.0"
-pytest-cov = "^4.1.0"
-mypy = "^1.20.2"
+pytest-cov = "^7.1.0"
+mypy = "^2.4.0"
 types-urllib3 = "^1.26.25.14"
-types-requests = "^2.33.0.20260906"
+types-requests = "^2.33.0.20261006"
 pytest-order = "^1.5.0"
 pytest-md = "^0.2.0"
 pytest-emoji = "^0.2.0"

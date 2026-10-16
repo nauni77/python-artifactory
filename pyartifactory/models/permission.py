@@ -77,8 +77,8 @@ class BasePermissionV2(BaseModel):
     # Note that when serializing this model Pydantic will by default use the
     # identifier name, *not* the alias, so you need to pass the parameter
     # by_alias=True when exporting (like permission.json(by_alias=True))
-    includePatterns: List[str] = Field(["**"], alias="include-patterns")
-    excludePatterns: List[str] = Field([""], alias="exclude-patterns")
+    includePatterns: List[str] | None = Field(None, alias="include-patterns")
+    excludePatterns: List[str] | None = Field(None, alias="exclude-patterns")
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -89,14 +89,14 @@ class RepoV2(BasePermissionV2):
 class BuildV2(BasePermissionV2):
     """Models a build v2 API."""
 
-    includePatterns: List[str] = Field([""], alias="include-patterns")
-    repositories: List[str] = ["artifactory-build-info"]
+    includePatterns: List[str] | None = Field(None, alias="include-patterns")
+    repositories: List[str] | None = Field(None, alias="repositories")
 
 
 class ReleaseBundleV2(BasePermissionV2):
     """Models a releaseBundle v2 API."""
 
-    excludePatterns: List[str] = Field([], alias="exclude-patterns")
+    excludePatterns: List[str] | None = Field(None, alias="exclude-patterns")
 
 
 class PermissionV2(BaseModel):
