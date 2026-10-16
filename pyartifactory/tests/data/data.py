@@ -122,7 +122,7 @@ class TestData:
         TestUser(prefix="py_test",
                  username="py_test",
                  password="pyTest123user+pwd",
-                 email="test.user@noventi.de"),
+                 email="test.user@company.de"),
     ]
 
     TEST_GROUPS: list[TestGroup] = [

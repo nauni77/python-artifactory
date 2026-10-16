@@ -10,58 +10,27 @@ from pyartifactory.tests.data.data import TestAuthConfig
 
 class TestBaseReal(unittest.TestCase):
 
-    # TODO: Just use two for source and target - with fitting env variables for everybody
-
     # TEST CLIENTS to access our Artifactory instances, with different users and permissions.
-    TEST_01_ADMIN: TestAuthConfig = TestAuthConfig(
-        url="https://vpartifactory01-x.intra.vsa.de",
-        bearer_token=os.environ["ARTIFACTORY_01_ADMIN_BEARER_TOKEN"],
+    TEST_ADMIN_SOURCE: TestAuthConfig = TestAuthConfig(
+        url=os.environ["ARTIFACTORY_SOURCE_URL"],
+        bearer_token=os.environ["ARTIFACTORY_SOURCE_ADMIN_BEARER_TOKEN"],
         username="admin",
-        password=os.environ["ARTIFACTORY_01_ADMIN_PASSWORD"],
+        password=os.environ["ARTIFACTORY_SOURCE_ADMIN_PASSWORD"],
     )
 
-    # TEST_02_ADMIN: TestAuthConfig = TestAuthConfig(
-    #     url="https://vpartifactory02-x.intra.vsa.de",
-    #     bearer_token=os.environ["ARTIFACTORY_02_ADMIN_BEARER_TOKEN"],
-    #     username="admin",
-    #     password=os.environ["ARTIFACTORY_02_ADMIN_PASSWORD"],
-    # )
-
-    TEST_03_ADMIN: TestAuthConfig = TestAuthConfig(
-        url="https://vpartifactory03-x.intra.noventigroup.com",
-        bearer_token=os.environ["ARTIFACTORY_03_ADMIN_BEARER_TOKEN"],
+    TEST_ADMIN_TARGET: TestAuthConfig = TestAuthConfig(
+        url=os.environ["ARTIFACTORY_TARGET_URL"],
+        bearer_token=os.environ["ARTIFACTORY_TARGET_ADMIN_BEARER_TOKEN"],
         username="admin",
-        password=os.environ["ARTIFACTORY_03_ADMIN_PASSWORD"],
+        password=os.environ["ARTIFACTORY_TARGET_ADMIN_PASSWORD"],
     )
 
-    TEST_04_ADMIN: TestAuthConfig = TestAuthConfig(
-        url="https://vpartifactory04-x.intra.noventigroup.com",
-        bearer_token=os.environ["ARTIFACTORY_04_ADMIN_BEARER_TOKEN"],
+    TEST_ADMIN_DEFAULT: TestAuthConfig = TestAuthConfig(
+        url=os.environ["ARTIFACTORY_DEFAULT_URL"],
+        bearer_token=os.environ["ARTIFACTORY_DEFAULT_ADMIN_BEARER_TOKEN"],
         username="admin",
-        password=os.environ["ARTIFACTORY_04_ADMIN_PASSWORD"],
+        password=os.environ["ARTIFACTORY_DEFAULT_ADMIN_PASSWORD"],
     )
-
-    TEST_03_CIAM_BUILD: TestAuthConfig = TestAuthConfig(
-        url="https://vpartifactory03-x.intra.noventigroup.com",
-        bearer_token=os.environ["ARTIFACTORY_03_ADMIN_BEARER_TOKEN"],
-        username="admin",
-        password=os.environ["ARTIFACTORY_03_ADMIN_PASSWORD"],
-    )
-
-    TEST_03_ANSIBLE_ENTW_BUILD: TestAuthConfig = TestAuthConfig(
-        url="https://vpartifactory03-x.intra.noventigroup.com",
-        bearer_token=os.environ["ARTIFACTORY_03_ADMIN_BEARER_TOKEN"],
-        username="ansibleEntwBuild",
-        password=os.environ["ARTIFACTORY_ANSIBLE_ENTW_PASSWORD"],
-    )
-
-    TEST_FRA_ADMIN: TestAuthConfig = TestAuthConfig(
-        url="https://vpartifactory01-20.intra.noventigroup.com",
-        bearer_token=os.environ["ARTIFACTORY_FRA_ADMIN_BEARER_TOKEN"],
-        username="admin",
-        password="UNSET",
-    )
-
 
     @classmethod
     def setUpClass(cls):
@@ -73,24 +42,14 @@ class TestBaseReal(unittest.TestCase):
         cls.logger = logging.getLogger("pyartifactory_real")
         cls.logger.info("setting up the test class")
 
-        # TODO: maybe migrate this also to simple dict,
-        #       like TEST_USER, TEST_GROUP, TEST_LOCAL_REPOSITORIES, TEST_REMOTE_REPOSITORIES,
-        #       TEST_VIRTUAL_REPOSITORIES, TEST_PERMISSIONS
+        cls.DEFAULT: TestAuthConfig = cls.TEST_ADMIN_DEFAULT
 
-        cls.TEST: TestAuthConfig = cls.TEST_03_ADMIN
-
-        cls.CLIENT_01: Artifactory = Artifactory(url=cls.TEST_01_ADMIN.url,
-                                                 access_token=cls.TEST_01_ADMIN.bearer_token)
-        # cls.CLIENT_02: Artifactory = Artifactory(url=cls.TEST_02_ADMIN.url,
-        #                                          access_token=cls.TEST_02_ADMIN.bearer_token)
-        cls.CLIENT_03: Artifactory = Artifactory(url=cls.TEST_03_ADMIN.url,
-                                                 access_token=cls.TEST_03_ADMIN.bearer_token)
-        cls.CLIENT_04: Artifactory = Artifactory(url=cls.TEST_04_ADMIN.url,
-                                                 access_token=cls.TEST_04_ADMIN.bearer_token)
-        cls.CLIENT_FRA: Artifactory = Artifactory(url=cls.TEST_FRA_ADMIN.url,
-                                                 access_token=cls.TEST_FRA_ADMIN.bearer_token)
-
-        cls.CLIENT_DEFAULT: Artifactory = cls.CLIENT_03
+        cls.CLIENT_SOURCE: Artifactory = Artifactory(url=cls.TEST_ADMIN_SOURCE.url,
+                                                     access_token=cls.TEST_ADMIN_SOURCE.bearer_token)
+        cls.CLIENT_TARGET: Artifactory = Artifactory(url=cls.TEST_ADMIN_TARGET.url,
+                                                     access_token=cls.TEST_ADMIN_TARGET.bearer_token)
+        cls.CLIENT_DEFAULT: Artifactory = Artifactory(url=cls.TEST_ADMIN_DEFAULT.url,
+                                                 access_token=cls.TEST_ADMIN_DEFAULT.bearer_token)
 
     @classmethod
     def tearDownClass(cls):
