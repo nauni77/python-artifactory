@@ -215,6 +215,7 @@ class ArtifactoryPermission(ArtifactoryObject):
         :param permission_name: Name of the permission to delete
         :return: None
         """
+        self.get(permission_name)  # Check if permission exists, will raise PermissionNotFoundError if not
         # v2 URL
         # DELETE: https://{jfrog_url}/artifactory/api/v2/security/permissions/{permissionTargetName}
         self._delete(f"artifactory/api/{self._uri}/{permission_name}")

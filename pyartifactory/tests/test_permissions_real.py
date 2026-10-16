@@ -52,6 +52,7 @@ class TestPermissionsReal(TestBaseReal):
             permission_details = self._client.permissions.get(cur_permission.name)
             self.logger.info(f"permission details for '{cur_permission.name}': {permission_details}")
 
+    @pytest.mark.order(5)
     def test_05_create_update_test_permission(self) -> None:
         """
         Test creating a new permission in artifactory.
@@ -86,8 +87,9 @@ class TestPermissionsReal(TestBaseReal):
         except PermissionNotFoundError:
             self.fail("Permission should exist now!")
 
-        # TODO: This is not working - rename creates a second permission with the new name, but does not delete the old one.
-        #       Maybe a bug in the API.
+        # ATTENTION:
+        # This is not working as expected - rename creates a second permission with the new name,
+        # but does not delete the old one. Reason is, it's the same API endpoint for update and create!
         details_permission = self._client.permissions.get(cur_permission_test_data.name)
         number_repositories_orig = len(details_permission.repo.repositories)
         details_permission.repo.repositories.pop()
