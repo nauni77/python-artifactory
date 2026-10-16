@@ -4,7 +4,7 @@ import logging
 from typing import List, Union, overload
 
 import requests
-from requests import Response
+from requests import Response, HTTPError
 
 from pyartifactory.exception import ArtifactoryError, PermissionAlreadyExistsError, PermissionNotFoundError
 from pyartifactory.models import AnyPermission
@@ -91,17 +91,11 @@ class ArtifactoryPermission(ArtifactoryObject):
                 "content-type": "application/json",
             }
 
-            # payload: str = permission.model_dump_json(by_alias=True, exclude={"name"}, exclude_none=True)
-            # payload: str = permission.model_dump_json(by_alias=True, exclude_none=True)
-
-            ## THIS IS WORKING!!!
-            # payload = {"repo": {
-            #     "repositories": ["py_test-pypi", "py_test-maven", "py_test-docker"],
-            #     "actions": {
-            #         "users": {"py_test": ["read", "write"]},
-            #         "groups": {"py_test": ["read"]}
-            #     }
-            # }}
+            # ATTENTION:
+            # It happens that a user or group is still in the permission,
+            # but it is not existing anymore in artifactory. For example if user/group is deleted,
+            # after adding to permission. In this case, the request will fail with 400 Bad Request.
+            # We should remove none existing users and groups (at target) in the permission before sending the request.
 
             self._put(
                 f"artifactory/api/{self._uri}/{permission_name}",
@@ -114,7 +108,7 @@ class ArtifactoryPermission(ArtifactoryObject):
     def get(self, permission_name: str) -> AnyPermission:
         """
         Get detailed permission from artifactory.
-        API: https://docs.jfrog.com/administration/reference/getpermissiondetails
+        API: https://docs.jfrog.com/administration/reference/getpermissiontargetdetailsv2
 
         :param permission_name: Name of the permission to retrieve
         :return: AnyPermission object (Permission v2 or v1)
@@ -137,12 +131,12 @@ class ArtifactoryPermission(ArtifactoryObject):
     def list(self) -> List[SimplePermission]:
         """
         Lists all the permissions
-        API: https://docs.jfrog.com/administration/reference/getpermissions
+        API: https://docs.jfrog.com/administration/reference/getpermissiontargetsv2
 
         :return: A list of permissions
         """
-        # TODO: new API
-        #       GET: https://{jfrog_url}/access/api/v2/permissions
+        # v2 URL
+        # GET: https://{jfrog_url}/artifactory/api/v2/security/permissions
         response = self._get(f"artifactory/api/{self._uri}")
         logger.debug("List all permissions successful")
         return [SimplePermission(**permission) for permission in response.json()]
@@ -175,6 +169,14 @@ class ArtifactoryPermission(ArtifactoryObject):
         :param permission: AnyPermission v2 or v1 object
         :return: AnyPermission v2 or v1 object
         """
+
+        # ATTENTION:
+        # This is not working very well, in case of rename the permission.
+        # The old permission is still existing, and the new one is created.
+        # Tested with V2!
+        # => It's the same API endpoint as create, at create it checks first if the permission already exists,
+        #    and if it does, it raises an error.
+
         permission_name = permission.name
         self._put(
             f"artifactory/api/{self._uri}/{permission_name}",
@@ -183,16 +185,37 @@ class ArtifactoryPermission(ArtifactoryObject):
         logger.debug("Permission %s successfully updated", permission_name)
         return self.get(permission_name)
 
+    def exists(self, permission_name: str) -> bool:
+        """
+        Checks if an artifactory permission exists
+        API: https://docs.jfrog.com/administration/reference/permissiontargetexistencecheckv2
+
+        :param permission_name: Name of the permission to check
+        :return: True if the permission exists, False otherwise
+        """
+        try:
+            headers = {"accept": "application/json"}
+            # v2 URL
+            # HEAD: https://{jfrog_url}/artifactory/api/v2/security/permissions/{permissionTargetName}
+            self._head(f"artifactory/api/{self._uri}/{permission_name}",
+                       headers=headers)
+            logger.debug("Permission %s exists", permission_name)
+            return True
+        except HTTPError as error:
+            if error.response.status_code == 404:
+                logger.debug("Permission %s does not exist", permission_name)
+                return False
+            raise error
+
     def delete(self, permission_name: str) -> None:
         """
         Removes an artifactory permission
-        API: https://docs.jfrog.com/administration/reference/deletepermission
+        API: https://docs.jfrog.com/administration/reference/deletepermissiontargetv2
 
         :param permission_name: Name of the permission to delete
         :return: None
         """
-        self.get(permission_name)
-        # TODO: new API
-        #       https://{jfrog_url}/access/api/v2/permissions/{permissionName}
+        # v2 URL
+        # DELETE: https://{jfrog_url}/artifactory/api/v2/security/permissions/{permissionTargetName}
         self._delete(f"artifactory/api/{self._uri}/{permission_name}")
         logger.debug("Permission %s successfully deleted", permission_name)

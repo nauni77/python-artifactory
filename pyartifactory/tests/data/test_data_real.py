@@ -5,7 +5,8 @@ import logging
 import pytest
 
 from pyartifactory import Artifactory
-from pyartifactory.exception import UserNotFoundError, GroupNotFoundError, RepositoryNotFoundError
+from pyartifactory.exception import UserNotFoundError, GroupNotFoundError, RepositoryNotFoundError, \
+    PermissionNotFoundError
 from pyartifactory.tests.data.data import TestData
 from pyartifactory.tests.base_test_real import TestBaseReal
 
@@ -60,25 +61,48 @@ class TestDataReal(TestBaseReal):
     @pytest.mark.order(15)
     def test_15_create_permissions(self) -> None:
         TestData.create_permissions(self._client)
-        # TODO: check results and steps on the way
+
+        for cur_permission in TestData.TEST_PERMISSIONS:
+            try:
+                self._client.permissions.get(cur_permission.name)
+                self.logger.info(f"Permission '{cur_permission.name}' exists - success.")
+            except Exception as e:
+                self.fail(f"Permission '{cur_permission.name}' was not created successfully. Error: {e}")
 
 
     @pytest.mark.order(50)
-    @pytest.mark.skip(reason="just check creation first - test cleanup after correct creation")
+    # @pytest.mark.skip(reason="just check creation first - test cleanup after correct creation")
     def test_20_cleanup_all(self) -> None:
         # everything is created in the previous tests, so we can cleanup everything now
         TestData.cleanup(self._client)
 
         # check for test users
-        try:
-            self._client.users.get(TestData.TEST_USERS[0].username)
-            self.fail(f"User '{TestData.TEST_USERS[0].username}' was not deleted successfully.")
-        except UserNotFoundError:
-            pass
+        for cur_user in TestData.TEST_USERS:
+            try:
+                self._client.users.get(cur_user.username)
+                self.fail(f"User '{cur_user.username}' was not deleted successfully.")
+            except UserNotFoundError:
+                pass
 
         # check for test groups
-        try:
-            self._client.groups.get(TestData.TEST_GROUPS[0].name)
-            self.fail(f"Group '{TestData.TEST_GROUPS[0].name}' was not deleted successfully.")
-        except GroupNotFoundError:
-            pass
+        for cur_group in TestData.TEST_GROUPS:
+            try:
+                self._client.groups.get(cur_group.name)
+                self.fail(f"Group '{cur_group.name}' was not deleted successfully.")
+            except GroupNotFoundError:
+                pass
+
+        # check for test permissions
+        for cur_permission in TestData.TEST_PERMISSIONS:
+            try:
+                self._client.permissions.get(cur_permission.name)
+                self.fail(f"Permission '{cur_permission.name}' was not deleted successfully.")
+            except PermissionNotFoundError:
+                pass
+
+        for cur_repo in TestData.TEST_REPOSITORIES_LOCAL:
+            try:
+                self._client.repositories.get_repo(cur_repo.name)
+                self.fail(f"Repository '{cur_repo.name}' was not deleted successfully.")
+            except RepositoryNotFoundError:
+                pass

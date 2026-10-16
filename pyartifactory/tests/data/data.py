@@ -211,7 +211,6 @@ class TestData:
         """
         Creates the defined test permissions at the Artifactory instance the client refers to.
         """
-        # TODO: CHECK
         for cur_permission in TestData.TEST_PERMISSIONS:
             try:
                 client.permissions.get(cur_permission.name)
@@ -232,12 +231,11 @@ class TestData:
         This method cleans the test permissions from Artifactory instance the client refers to.
         @param: client The client to the artifactory to execute the changes.
         """
-        # TODO : CHECK
         for cur_permission in TestData.TEST_PERMISSIONS:
             try:
                 client.permissions.delete(cur_permission.name)
                 logging.getLogger("TestData").info(f"test permission deleted ({cur_permission.name})")
-            except Exception:
+            except PermissionNotFoundError:
                 logging.getLogger("TestData").info(f"test permission not found, nothing to delete ({cur_permission.name})")
 
     @staticmethod
