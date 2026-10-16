@@ -64,6 +64,14 @@ class ArtifactoryObject:
         """
         return self._generic_http_method_request("delete", route, **kwargs)
 
+    def _head(self, route: str, **kwargs) -> Response:
+        """
+        :param route: API Route
+        :param kwargs: Additional parameters to add the request
+        :returns  An HTTP response
+        """
+        return self._generic_http_method_request("head", route, **kwargs)
+
     def _patch(self, route: str, **kwargs) -> Response:
         """
         :param route: API Route
