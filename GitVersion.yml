@@ -1,0 +1,19 @@
+# information about configuration of GitVersion:
+# https://gitversion.net/docs/reference/configuration
+
+branches:
+  main:
+    mode: ContinuousDelivery
+    prevent-increment:
+      when-current-commit-tagged: true
+    label: beta
+    is-release-branch: true
+    increment: Patch
+  release:
+    mode: ContinuousDelivery
+    prevent-increment:
+      when-current-commit-tagged: true
+    label: beta
+    is-release-branch: true
+    increment: Patch
+    
