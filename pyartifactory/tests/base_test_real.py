@@ -5,7 +5,7 @@ import os
 import unittest
 
 from pyartifactory import Artifactory
-from pyartifactory.tests.data.data import TestAuthConfig
+from pyartifactory.tests.data.data import TestAuthConfig, TestData
 
 
 class TestBaseReal(unittest.TestCase):
@@ -58,8 +58,7 @@ class TestBaseReal(unittest.TestCase):
         The first parameter is the class itself, not self.
         """
         cls.logger.info("cleanup test data after all tests in the class have run")
-        # TODO: enable later if everything works fine, but for now we want to keep the test data for manual testing
-        # TestData.cleanup(cls.CLIENT_DEFAULT)
+        TestData.cleanup(cls.CLIENT_DEFAULT)
         cls.logger.info("tearing down the test class")
 
 
