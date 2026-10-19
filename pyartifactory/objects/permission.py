@@ -124,7 +124,6 @@ class ArtifactoryPermission(ArtifactoryObject):
         except requests.exceptions.HTTPError as error:
             http_response: Union[Response, None] = error.response
             if isinstance(http_response, Response) and http_response.status_code in (404, 400):
-                logger.error("Permission %s does not exist", permission_name)
                 raise PermissionNotFoundError(f"Permission {permission_name} does not exist")
             raise ArtifactoryError from error
 
