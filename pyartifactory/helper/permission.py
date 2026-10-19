@@ -3,7 +3,7 @@ from pyartifactory import Artifactory
 from pyartifactory.models import PermissionV2, SimpleUser
 
 
-def clean_users(client: Artifactory, permission: PermissionV2) -> None:
+def _clean_users(client: Artifactory, permission: PermissionV2) -> None:
     """
     Clean up all users in the Artifactory instance.
     """
@@ -23,7 +23,7 @@ def clean_users(client: Artifactory, permission: PermissionV2) -> None:
             permission.repo.actions.users.pop(cur)
             logging.warning(f"User '{cur}' not found in Artifactory, removed from permission '{permission.name}'")
 
-def clean_groups(client: Artifactory, permission: PermissionV2) -> None:
+def _clean_groups(client: Artifactory, permission: PermissionV2) -> None:
     """
     Clean up all groups in the Artifactory instance.
     """
@@ -47,7 +47,15 @@ def clean_groups(client: Artifactory, permission: PermissionV2) -> None:
 def clean_permission(client: Artifactory, permission: PermissionV2) -> None:
     """
     clean user and groups in the permission object by removing any users or groups that do not exist in the Artifactory instance.
-    TODO: maybe also remote not existing repositories from target ...
+
+    Removing of users is also important, if a user added is included from LDAP and was never logged in at target Artifactory.
+    This insert will fail, because the target Artifactory does not know this user and will reject the permission object.
+
+    This is implemented, because if you delete a user or group in source and target Artifactory,
+    this will exist in the permission object until some Artifactory routines are executed.
+    So the user/group will be retrieved from Artifactory inside the permissions
+    and will cause an error in target Artifactory during insertion.
     """
-    clean_users(client, permission)
-    clean_groups(client, permission)
+    _clean_users(client, permission)
+    _clean_groups(client, permission)
+    # maybe also remote not existing repositories from target ...
