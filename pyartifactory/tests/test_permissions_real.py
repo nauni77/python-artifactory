@@ -126,10 +126,6 @@ class TestPermissionsReal(TestBaseReal):
         # new_permission_copy: PermissionV2 = PermissionV2(name=permission_details_src.name, repo=repos)
         # new_permission_copy.name = target_permission_name
 
-        # TODO: Check if include and exclude changed in src permission, and copy them if they exist
-
-        permission_details_src.name = "other_name"
-
         self.logger.info(f"permission src:\n{permission_details_src.model_dump_json(by_alias=True, exclude_none=True, indent=2)}")
         # self.logger.info(f"permission copy:\n{new_permission_copy.model_dump_json(by_alias=True, exclude_none=True, indent=2)}")
 
